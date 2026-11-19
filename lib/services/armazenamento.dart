@@ -12,6 +12,6 @@ class Armazenamento {
 
   static String? ler(String chave) => _prefs.getString(chave);
 
-  static Future<void> gravar(String chave, String valor) =>
+  static Future<bool> gravar(String chave, String valor) =>
       _prefs.setString(chave, valor);
 }

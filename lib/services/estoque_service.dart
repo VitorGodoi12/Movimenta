@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:movimenta/models/movimentacao.dart';
 import 'package:movimenta/models/produto.dart';
 import 'package:movimenta/services/armazenamento.dart';
+import 'package:movimenta/services/importacao_estoque.dart';
 import 'package:movimenta/services/perfil_service.dart';
 import 'package:movimenta/utils/formatadores.dart';
 
@@ -179,6 +180,102 @@ class EstoqueService extends ChangeNotifier {
     _produtos.add(produto);
     _registrar(produto, TipoMovimento.cadastro, produto.quantidade);
     _mudou();
+  }
+
+  Future<void> importarContagem(List<ItemImportado> itens) async {
+    final index = <String, List<Produto>>{};
+    for (final produto in _produtos) {
+      final chave = chaveProdutoImportado(
+        produto.nome, produto.unidade, produto.categoria,
+      );
+      (index[chave] ??= []).add(produto);
+    }
+
+    final alteracoes = <Produto, Produto>{};
+    final novosProdutos = <Produto>[];
+    final movimentos = <Movimentacao>[];
+    final agora = DateTime.now();
+    for (final item in itens) {
+      final semCategoria = chaveProdutoImportado(
+        item.nome, item.unidade, 'Outros',
+      );
+      final correspondentes = index[item.chave] ?? index[semCategoria];
+      if (correspondentes != null && correspondentes.length > 1) {
+        throw StateError(
+          'Há mais de um produto chamado ${item.nome} com a mesma unidade. Revise os cadastros antes de importar.',
+        );
+      }
+      final anterior = correspondentes?.single;
+      final classificar = anterior != null
+          && item.chave != semCategoria
+          && index[item.chave] == null;
+      if (classificar) index.remove(semCategoria);
+      final produto = anterior == null
+          ? Produto(
+              id: novoId(),
+              nome: item.nome,
+              categoria: item.categoria,
+              quantidade: item.quantidade,
+              minimo: 0,
+              preco: 0,
+              unidade: item.unidade,
+            )
+          : (Produto.fromJson(anterior.toJson())..quantidade = item.quantidade);
+      if (classificar) produto.categoria = item.categoria;
+      if (anterior == null) {
+        novosProdutos.add(produto);
+      } else {
+        alteracoes[anterior] = produto;
+      }
+      final delta = item.quantidade - (anterior?.quantidade ?? 0);
+      if (anterior == null || delta != 0) {
+        movimentos.add(
+          Movimentacao(
+            id: novoId(),
+            produtoId: produto.id,
+            produtoNome: produto.nome,
+            tipo: anterior == null
+                ? TipoMovimento.cadastro
+                : TipoMovimento.ajuste,
+            delta: delta,
+            data: agora,
+            motivo: 'Importação de estoque',
+          ),
+        );
+      }
+    }
+
+    final historico = [
+      ...movimentos.reversed,
+      ..._historico,
+    ].take(_limiteHistorico).toList();
+    final dados = {
+      'produtos': [
+        for (final produto in _produtos)
+          (alteracoes[produto] ?? produto).toJson(),
+        for (final produto in novosProdutos) produto.toJson(),
+      ],
+      'historico': [for (final movimento in historico) movimento.toJson()],
+    };
+    try {
+      if (!await Armazenamento.gravar(_chave, jsonEncode(dados))) {
+        throw StateError('Falha na gravação local.');
+      }
+    } catch (_) {
+      throw StateError(
+        'Não foi possível salvar a importação. Tente novamente.',
+      );
+    }
+    for (final MapEntry(key: anterior, value: novo) in alteracoes.entries) {
+      anterior
+        ..quantidade = novo.quantidade
+        ..categoria = novo.categoria;
+    }
+    _produtos.addAll(novosProdutos);
+    _historico
+      ..clear()
+      ..addAll(historico);
+    notifyListeners();
   }
 
   void salvarAlteracoes(Produto produto) => _mudou();

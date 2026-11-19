@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:movimenta/models/produto.dart';
+import 'package:movimenta/screens/estoque/importar_estoque_screen.dart';
 import 'package:movimenta/screens/estoque/produto_detalhe_screen.dart';
 import 'package:movimenta/screens/estoque/produto_form_screen.dart';
 import 'package:movimenta/screens/scanner/fluxo_scanner.dart';
@@ -25,17 +26,17 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
   _Ordem _ordem = _Ordem.nome;
 
   String _rotuloFiltro(_Filtro f) => switch (f) {
-        _Filtro.todos => 'Todos',
-        _Filtro.acabando => 'Acabando',
-        _Filtro.zerados => 'Zerados',
-        _Filtro.vencendo => 'Vencendo',
-      };
+    _Filtro.todos => 'Todos',
+    _Filtro.acabando => 'Acabando',
+    _Filtro.zerados => 'Zerados',
+    _Filtro.vencendo => 'Vencendo',
+  };
 
   String _rotuloOrdem(_Ordem o) => switch (o) {
-        _Ordem.nome => 'Nome (A a Z)',
-        _Ordem.menorEstoque => 'Menor estoque',
-        _Ordem.validade => 'Validade mais próxima',
-      };
+    _Ordem.nome => 'Nome (A a Z)',
+    _Ordem.menorEstoque => 'Menor estoque',
+    _Ordem.validade => 'Validade mais próxima',
+  };
 
   bool _venceLogo(Produto p) {
     if (p.quantidade <= 0) return false;
@@ -46,7 +47,8 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
   List<Produto> _filtrar(List<Produto> todos) {
     final b = _busca.trim().toLowerCase();
     final lista = todos.where((p) {
-      final okBusca = b.isEmpty ||
+      final okBusca =
+          b.isEmpty ||
           p.nome.toLowerCase().contains(b) ||
           p.categoria.toLowerCase().contains(b) ||
           (p.codigoBarras ?? '').contains(b);
@@ -62,7 +64,8 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
     switch (_ordem) {
       case _Ordem.nome:
         lista.sort(
-            (a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+          (a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()),
+        );
       case _Ordem.menorEstoque:
         lista.sort((a, b) => a.quantidade.compareTo(b.quantidade));
       case _Ordem.validade:
@@ -76,17 +79,48 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
     return lista;
   }
 
+  Future<void> _importar() async {
+    final total = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(builder: (_) => const ImportarEstoqueScreen()),
+    );
+    if (total != null && mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$total produtos importados.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([estoque, perfil]),
       builder: (context, _) {
         final lista = _filtrar(estoque.produtos);
+        final grupos = <String, List<Produto>>{};
+        for (final produto in lista) {
+          final categoria = produto.categoria.trim();
+          (grupos[categoria.isEmpty ? 'Outros' : categoria] ??= []).add(
+            produto,
+          );
+        }
+        final categorias = grupos.keys.toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        final linhas = [
+          for (final categoria in categorias) ...<Object>[
+            categoria,
+            ...grupos[categoria]!,
+          ],
+        ];
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('Estoque'),
             actions: [
+              IconButton(
+                tooltip: 'Importar lista de estoque',
+                onPressed: _importar,
+                icon: const Icon(Icons.playlist_add),
+              ),
               PopupMenuButton<_Ordem>(
                 tooltip: 'Ordenar',
                 icon: const Icon(Icons.sort),
@@ -148,31 +182,42 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                     ? const EstadoVazio(
                         icone: Icons.inventory_2_outlined,
                         titulo: 'Nenhum produto ainda',
-                        texto:
-                            'Toque em "Novo produto" para cadastrar o primeiro.',
+                        texto: 'Cadastre um produto ou importe uma lista de estoque.',
                       )
                     : lista.isEmpty
-                        ? const EstadoVazio(
-                            icone: Icons.search_off,
-                            titulo: 'Nenhum produto encontrado',
-                            texto: 'Mude a busca ou o filtro.',
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
-                            itemCount: lista.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (context, i) => ProdutoTile(
-                              produto: lista[i],
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      ProdutoDetalheScreen(produto: lista[i]),
-                                ),
+                    ? const EstadoVazio(
+                        icone: Icons.search_off,
+                        titulo: 'Nenhum produto encontrado',
+                        texto: 'Mude a busca ou o filtro.',
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 104),
+                        itemCount: linhas.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, i) {
+                          final linha = linhas[i];
+                          if (linha is String) {
+                            return Semantics(
+                              header: true,
+                              child: Text(
+                                linha,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            );
+                          }
+                          final produto = linha as Produto;
+                          return ProdutoTile(
+                            produto: produto,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ProdutoDetalheScreen(produto: produto),
                               ),
                             ),
-                          ),
+                          );
+                        },
+                      ),
               ),
             ],
           ),

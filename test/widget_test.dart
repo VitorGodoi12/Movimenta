@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:movimenta/app.dart';
+import 'package:movimenta/screens/estoque/estoque_screen.dart';
+import 'package:movimenta/services/estoque_service.dart';
 import 'package:movimenta/services/armazenamento.dart';
 import 'package:movimenta/services/perfil_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,5 +32,30 @@ void main() {
     addTearDown(perfilRecarregado.dispose);
     await perfilRecarregado.carregar();
     expect(perfilRecarregado.cliente?.estabelecimento, 'Loja Teste');
+  });
+
+  testWidgets('Confere uma lista e importa pelo menu do estoque', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await Armazenamento.iniciar();
+    await tester.pumpWidget(const MaterialApp(home: EstoqueScreen()));
+    await tester.tap(find.byTooltip('Importar lista de estoque'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField).last,
+      '1 cx salsicha\n0 X Itaipava 350',
+    );
+    await tester.tap(find.text('Conferir lista'));
+    await tester.pumpAndSettle();
+
+    expect(estoque.produtos, isEmpty);
+    expect(find.text('Bebidas'), findsOneWidget);
+    expect(find.text('Salgados e congelados'), findsOneWidget);
+    await tester.tap(find.text('Importar 2 produtos'));
+    await tester.pumpAndSettle();
+    expect(estoque.produtos, hasLength(2));
+    expect(find.text('Bebidas'), findsWidgets);
+    expect(find.text('Salgados e congelados'), findsWidgets);
   });
 }

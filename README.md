@@ -17,6 +17,12 @@ flutter pub get
 flutter run
 ```
 
+## Importar uma contagem
+
+Na tela **Estoque**, toque em **Importar lista de estoque**, cole o texto e confira a prévia. A importação aceita quantidades em unidades, caixas e fardos, inclui itens zerados e usa a última contagem quando o mesmo produto aparece mais de uma vez. Corrija no texto as linhas sinalizadas sem quantidade. Os produtos ficam agrupados por categoria no estoque.
+
+Ao ler ou digitar um código de barras, o aplicativo abre o produto cadastrado. Se o código ainda estiver livre, escolha entre vincular a um produto sem código e cadastrar um novo.
+
 ## Compilar e testar
 
 ```sh
