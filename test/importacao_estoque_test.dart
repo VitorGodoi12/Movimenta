@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/services/armazenamento.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/services/importacao_estoque.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/services/armazenamento.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/importacao_estoque.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

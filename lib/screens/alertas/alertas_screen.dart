@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/movimentacao.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/screens/alertas/lista_compras_screen.dart';
-import 'package:movimenta/screens/estoque/produto_detalhe_screen.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/services/perfil_service.dart';
-import 'package:movimenta/widgets/estado_vazio.dart';
-import 'package:movimenta/widgets/movimentar_sheet.dart';
-import 'package:movimenta/widgets/produto_tile.dart';
+import 'package:stokio/models/movimentacao.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/screens/alertas/lista_compras_screen.dart';
+import 'package:stokio/screens/estoque/produto_detalhe_screen.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/widgets/estado_vazio.dart';
+import 'package:stokio/widgets/movimentar_sheet.dart';
+import 'package:stokio/widgets/produto_tile.dart';
 
 class AlertasScreen extends StatelessWidget {
   const AlertasScreen({super.key});

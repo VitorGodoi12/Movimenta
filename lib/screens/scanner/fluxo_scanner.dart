@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/screens/estoque/produto_detalhe_screen.dart';
-import 'package:movimenta/screens/estoque/produto_form_screen.dart';
-import 'package:movimenta/screens/scanner/scanner_screen.dart';
-import 'package:movimenta/services/estoque_service.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/screens/estoque/produto_detalhe_screen.dart';
+import 'package:stokio/screens/estoque/produto_form_screen.dart';
+import 'package:stokio/screens/scanner/scanner_screen.dart';
+import 'package:stokio/services/estoque_service.dart';
 
 Future<void> escanearEAbrir(BuildContext context) async {
   final codigo = await lerCodigo(context);

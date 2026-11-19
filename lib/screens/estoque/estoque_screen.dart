@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/screens/estoque/importar_estoque_screen.dart';
-import 'package:movimenta/screens/estoque/produto_detalhe_screen.dart';
-import 'package:movimenta/screens/estoque/produto_form_screen.dart';
-import 'package:movimenta/screens/scanner/fluxo_scanner.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/services/perfil_service.dart';
-import 'package:movimenta/widgets/estado_vazio.dart';
-import 'package:movimenta/widgets/produto_tile.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/screens/estoque/importar_estoque_screen.dart';
+import 'package:stokio/screens/estoque/produto_detalhe_screen.dart';
+import 'package:stokio/screens/estoque/produto_form_screen.dart';
+import 'package:stokio/screens/scanner/fluxo_scanner.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/widgets/estado_vazio.dart';
+import 'package:stokio/widgets/produto_tile.dart';
 
 enum _Filtro { todos, acabando, zerados, vencendo }
 
@@ -51,7 +51,8 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
           b.isEmpty ||
           p.nome.toLowerCase().contains(b) ||
           p.categoria.toLowerCase().contains(b) ||
-          (p.codigoBarras ?? '').contains(b);
+          (p.codigoBarras ?? '').contains(b) ||
+          (p.local ?? '').toLowerCase().contains(b);
       final okFiltro = switch (_filtro) {
         _Filtro.todos => true,
         _Filtro.acabando => p.situacao == SituacaoEstoque.baixo,
@@ -148,7 +149,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                 child: TextField(
                   onChanged: (v) => setState(() => _busca = v),
                   decoration: InputDecoration(
-                    hintText: 'Buscar por nome, categoria ou código',
+                    hintText: 'Buscar por nome, categoria, local ou código',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: IconButton(
                       tooltip: 'Escanear código de barras',

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/theme/app_theme.dart';
+import 'package:stokio/models/movimentacao.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/theme/app_theme.dart';
 
 Future<bool> confirmar(
   BuildContext context, {
@@ -35,4 +37,24 @@ void avisar(BuildContext context, String texto) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(texto)));
+}
+
+/// Aviso com botão "Desfazer" que reverte as movimentações informadas.
+void avisarComDesfazer(
+  BuildContext context,
+  String texto,
+  List<Movimentacao> movs,
+) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(texto),
+        action: SnackBarAction(
+          label: 'Desfazer',
+          textColor: AppCores.roxo,
+          onPressed: () => estoque.desfazerVarias(movs),
+        ),
+      ),
+    );
 }

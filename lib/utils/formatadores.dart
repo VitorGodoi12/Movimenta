@@ -47,3 +47,37 @@ String descreverValidade(int dias) {
   if (dias == 1) return 'Vence amanhã';
   return 'Vence em $dias dias';
 }
+
+const _semana = [
+  'segunda-feira',
+  'terça-feira',
+  'quarta-feira',
+  'quinta-feira',
+  'sexta-feira',
+  'sábado',
+  'domingo',
+];
+
+const _meses = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+];
+
+/// Ex.: "Quinta-feira, 19 de novembro".
+String descricaoHoje() {
+  final d = DateTime.now();
+  final dia = _semana[d.weekday - 1];
+  return '${dia[0].toUpperCase()}${dia.substring(1)}, ${d.day} de ${_meses[d.month - 1]}';
+}
+
+String formatarPercentual(double fracao) => '${(fracao * 100).round()}%';

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:movimenta/app.dart';
-import 'package:movimenta/screens/estoque/estoque_screen.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/services/armazenamento.dart';
-import 'package:movimenta/services/perfil_service.dart';
+import 'package:stokio/app.dart';
+import 'package:stokio/screens/estoque/estoque_screen.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/armazenamento.dart';
+import 'package:stokio/services/perfil_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -12,7 +12,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Armazenamento.iniciar();
     await perfil.carregar();
-    await tester.pumpWidget(const MovimentaApp());
+    await tester.pumpWidget(const StokioApp());
     await tester.pumpAndSettle();
 
     final campos = find.byType(TextFormField);

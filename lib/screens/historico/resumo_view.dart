@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/theme/app_theme.dart';
-import 'package:movimenta/utils/formatadores.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/utils/formatadores.dart';
 
 /// Números da semana e do mês, calculados a partir do histórico.
 class ResumoView extends StatelessWidget {
@@ -43,11 +43,36 @@ class ResumoView extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Soma de quantidade x preço de todos os produtos.',
+                    'Soma de quantidade x preço de venda.',
                     style: t.bodySmall,
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _Numero(
+                    rotulo: 'Custo investido',
+                    valor: formatarPreco(estoque.custoEmEstoque),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _Numero(
+                    rotulo: 'Vendas em 30 dias',
+                    valor: formatarPreco(estoque.receitaVendas(30)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _Numero(
+              rotulo: 'Lucro estimado em 30 dias',
+              valor: formatarPreco(estoque.lucroEstimado(30)),
+              nota:
+                  'Só conta produtos com preço de custo informado, usando os preços de hoje.',
             ),
             const SizedBox(height: 24),
             Text(
@@ -228,6 +253,43 @@ class _LinhaRanking extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Numero extends StatelessWidget {
+  const _Numero({required this.rotulo, required this.valor, this.nota});
+
+  final String rotulo;
+  final String valor;
+  final String? nota;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppCores.roxoCampo,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppCores.linha),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(rotulo, style: t.bodySmall?.copyWith(color: AppCores.cinza)),
+          const SizedBox(height: 4),
+          Text(
+            valor,
+            style: t.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          if (nota != null) ...[
+            const SizedBox(height: 4),
+            Text(nota!, style: t.bodySmall?.copyWith(color: AppCores.cinza)),
+          ],
         ],
       ),
     );

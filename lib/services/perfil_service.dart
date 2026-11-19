@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:movimenta/models/cliente.dart';
-import 'package:movimenta/services/armazenamento.dart';
+import 'package:stokio/models/cliente.dart';
+import 'package:stokio/services/armazenamento.dart';
 
 final PerfilService perfil = PerfilService();
 

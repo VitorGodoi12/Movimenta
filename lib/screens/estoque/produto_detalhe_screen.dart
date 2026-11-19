@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/movimentacao.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/screens/estoque/produto_form_screen.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/services/perfil_service.dart';
-import 'package:movimenta/theme/app_theme.dart';
-import 'package:movimenta/utils/formatadores.dart';
-import 'package:movimenta/widgets/dialogos.dart';
-import 'package:movimenta/widgets/movimentacao_tile.dart';
-import 'package:movimenta/widgets/movimentar_sheet.dart';
-import 'package:movimenta/widgets/nivel_estoque.dart';
-import 'package:movimenta/widgets/selo_situacao.dart';
+import 'package:stokio/models/movimentacao.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/screens/estoque/produto_form_screen.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/utils/formatadores.dart';
+import 'package:stokio/widgets/aparecer.dart';
+import 'package:stokio/widgets/dialogos.dart';
+import 'package:stokio/widgets/movimentacao_tile.dart';
+import 'package:stokio/widgets/movimentar_sheet.dart';
+import 'package:stokio/widgets/nivel_estoque.dart';
+import 'package:stokio/widgets/selo_situacao.dart';
 
 class ProdutoDetalheScreen extends StatelessWidget {
   const ProdutoDetalheScreen({super.key, required this.produto});
@@ -47,6 +48,9 @@ class ProdutoDetalheScreen extends StatelessWidget {
         final situacaoValidade = produto.quantidade > 0
             ? produto.situacaoValidade(perfil.diasAvisoValidade)
             : SituacaoValidade.ok;
+        final fornecedor = estoque.fornecedorDe(produto);
+        final margem = produto.margem;
+        final local = (produto.local ?? '').trim();
 
         return Scaffold(
           appBar: AppBar(
@@ -69,7 +73,7 @@ class ProdutoDetalheScreen extends StatelessWidget {
             ],
           ),
           body: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
             children: [
               Text(
                 produto.nome,
@@ -77,47 +81,51 @@ class ProdutoDetalheScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                produto.categoria,
+                local.isEmpty
+                    ? produto.categoria
+                    : '${produto.categoria}, $local',
                 style: t.bodyMedium?.copyWith(color: AppCores.cinza),
               ),
               const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppCores.roxoSuave,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${produto.quantidade}',
-                          style: t.displaySmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            height: 1,
+              Aparecer(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppCores.roxoSuave,
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${produto.quantidade}',
+                            style: t.displayMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              height: 1,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text('${produto.unidade} em estoque',
-                              style: t.bodyMedium),
-                        ),
-                        const Spacer(),
-                        SeloSituacao(situacao: produto.situacao),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    NivelEstoque(produto: produto, altura: 10),
-                    const SizedBox(height: 8),
-                    Text(
-                      'O traço preto marca o mínimo: ${produto.minimo} ${produto.unidade}',
-                      style: t.bodySmall?.copyWith(color: AppCores.cinza),
-                    ),
-                  ],
+                          const SizedBox(width: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Text('${produto.unidade} em estoque',
+                                style: t.bodyMedium),
+                          ),
+                          const Spacer(),
+                          SeloSituacao(situacao: produto.situacao),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      NivelEstoque(produto: produto, altura: 12),
+                      const SizedBox(height: 8),
+                      Text(
+                        'O traço preto marca o mínimo: ${produto.minimo} ${produto.unidade}',
+                        style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -164,12 +172,30 @@ class ProdutoDetalheScreen extends StatelessWidget {
                 )
               else
                 const _Linha(rotulo: 'Validade', valor: 'Não informada'),
-              _Linha(rotulo: 'Preço', valor: formatarPreco(produto.preco)),
+              _Linha(
+                rotulo: 'Preço de venda',
+                valor: formatarPreco(produto.preco),
+              ),
+              if (produto.custo > 0)
+                _Linha(
+                  rotulo: 'Preço de custo',
+                  valor: formatarPreco(produto.custo),
+                ),
+              if (margem != null)
+                _Linha(rotulo: 'Margem', valor: formatarPercentual(margem)),
               _Linha(
                 rotulo: 'Valor em estoque',
                 valor: formatarPreco(produto.valorEmEstoque),
               ),
               _Linha(rotulo: 'Estoque mínimo', valor: '${produto.minimo}'),
+              _Linha(
+                rotulo: 'Local',
+                valor: local.isEmpty ? 'Não informado' : local,
+              ),
+              _Linha(
+                rotulo: 'Fornecedor',
+                valor: fornecedor?.nome ?? 'Não informado',
+              ),
               _Linha(
                 rotulo: 'Código de barras',
                 valor: produto.codigoBarras ?? 'Não informado',
@@ -216,12 +242,19 @@ class _Linha extends StatelessWidget {
       child: Row(
         children: [
           Text(rotulo, style: t.bodyMedium?.copyWith(color: AppCores.cinza)),
+          const SizedBox(width: 16),
           const Spacer(),
           if (complemento != null) ...[
             complemento!,
             const SizedBox(width: 8),
           ],
-          Text(valor, style: t.bodyLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Flexible(
+            child: Text(
+              valor,
+              textAlign: TextAlign.end,
+              style: t.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
         ],
       ),
     );

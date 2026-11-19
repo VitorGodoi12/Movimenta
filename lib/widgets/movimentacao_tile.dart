@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/movimentacao.dart';
-import 'package:movimenta/theme/app_theme.dart';
-import 'package:movimenta/utils/formatadores.dart';
+import 'package:stokio/models/movimentacao.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/utils/formatadores.dart';
 
 class MovimentacaoTile extends StatelessWidget {
   const MovimentacaoTile({super.key, required this.mov});

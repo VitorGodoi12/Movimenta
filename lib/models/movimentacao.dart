@@ -8,6 +8,7 @@ class Motivos {
   static const venda = 'Venda';
   static const uso = 'Uso interno';
   static const perda = 'Perda ou vencimento';
+  static const inventario = 'Inventário';
   static const outro = 'Outro';
 
   static const entrada = [compra, devolucao, outro];

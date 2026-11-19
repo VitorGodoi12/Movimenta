@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:movimenta/models/movimentacao.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/screens/scanner/scanner_screen.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/theme/app_theme.dart';
-import 'package:movimenta/widgets/campo_data.dart';
+import 'package:stokio/models/movimentacao.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/screens/scanner/scanner_screen.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/widgets/campo_data.dart';
 
 /// Folha para registrar entrada, saída ou ajuste de contagem.
 /// Se [produto] for informado, ele já vem escolhido.

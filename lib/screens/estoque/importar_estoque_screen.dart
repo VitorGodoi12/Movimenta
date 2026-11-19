@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/services/importacao_estoque.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/importacao_estoque.dart';
 
 class ImportarEstoqueScreen extends StatefulWidget {
   const ImportarEstoqueScreen({super.key});

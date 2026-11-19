@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/theme/app_theme.dart';
+import 'package:stokio/theme/app_theme.dart';
 
 class EstadoVazio extends StatelessWidget {
   const EstadoVazio({

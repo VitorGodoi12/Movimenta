@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/cliente.dart';
-import 'package:movimenta/screens/shell_screen.dart';
-import 'package:movimenta/services/perfil_service.dart';
-import 'package:movimenta/theme/app_theme.dart';
-import 'package:movimenta/widgets/marca_movimenta.dart';
+import 'package:stokio/models/cliente.dart';
+import 'package:stokio/screens/shell_screen.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/widgets/marca_stokio.dart';
 
 /// Primeira tela do app: cria o perfil local do estabelecimento.
 /// Quando o login online existir, é aqui que ele entra.
@@ -67,7 +67,7 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const MarcaMovimenta(),
+                  const MarcaStokio(),
                   const SizedBox(height: 28),
                   Text(
                     'Seu estoque,\nsempre em dia.',

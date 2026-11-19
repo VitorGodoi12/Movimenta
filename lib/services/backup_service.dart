@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/services/perfil_service.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/perfil_service.dart';
 
 /// Backup em texto (JSON). Como os dados ficam só no aparelho,
 /// o backup é a forma de levar tudo para outro celular.
@@ -10,7 +10,7 @@ class BackupService {
 
   static String exportar() {
     return const JsonEncoder.withIndent('  ').convert({
-      'app': 'movimenta',
+      'app': 'stokio',
       'versao': 1,
       'perfil': perfil.toJson(),
       'estoque': estoque.toJson(),
@@ -20,8 +20,8 @@ class BackupService {
   /// Lança exceção se o texto não for um backup válido.
   static Future<void> importar(String texto) async {
     final j = jsonDecode(texto.trim());
-    if (j is! Map<String, dynamic> || j['app'] != 'movimenta') {
-      throw const FormatException('Não é um backup do Movimenta.');
+    if (j is! Map<String, dynamic> || !const ['stokio', 'movimenta'].contains(j['app'])) {
+      throw const FormatException('Não é um backup do Stokio.');
     }
     estoque.aplicarJson(j['estoque'] as Map<String, dynamic>);
     perfil.aplicarJson(j['perfil'] as Map<String, dynamic>);

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:movimenta/services/backup_service.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/services/perfil_service.dart';
-import 'package:movimenta/theme/app_theme.dart';
-import 'package:movimenta/widgets/dialogos.dart';
+import 'package:stokio/services/backup_service.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/exportacao_service.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/widgets/dialogos.dart';
 
 class ConfiguracoesScreen extends StatefulWidget {
   const ConfiguracoesScreen({super.key});
@@ -149,6 +150,26 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
             detalhe: 'Cole o texto de um backup anterior.',
           ),
           const SizedBox(height: 20),
+          Text('Planilhas', style: titulo),
+          const SizedBox(height: 4),
+          opcao(
+            Icons.table_chart_outlined,
+            'Exportar estoque (CSV)',
+            () => ExportacaoService.compartilhar(
+              'estoque-movimenta.csv',
+              ExportacaoService.csvEstoque(),
+            ),
+            detalhe: 'Abre no Excel ou Google Planilhas.',
+          ),
+          opcao(
+            Icons.history,
+            'Exportar histórico (CSV)',
+            () => ExportacaoService.compartilhar(
+              'historico-movimenta.csv',
+              ExportacaoService.csvHistorico(),
+            ),
+          ),
+          const SizedBox(height: 20),
           Text('Dados', style: titulo),
           const SizedBox(height: 4),
           opcao(Icons.auto_awesome_outlined, 'Carregar dados de exemplo',
@@ -157,7 +178,7 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
               perigo: true),
           const SizedBox(height: 24),
           Text(
-            'Movimenta 1.0.0',
+            'Stokio 1.1.0',
             style: t.bodySmall?.copyWith(color: AppCores.cinza),
           ),
         ],

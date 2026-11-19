@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/theme/app_theme.dart';
-import 'package:movimenta/utils/formatadores.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/utils/formatadores.dart';
 
 extension SituacaoVisual on SituacaoEstoque {
   Color get cor => switch (this) {

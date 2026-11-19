@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/screens/alertas/alertas_screen.dart';
-import 'package:movimenta/screens/estoque/estoque_screen.dart';
-import 'package:movimenta/screens/historico/historico_screen.dart';
-import 'package:movimenta/screens/home/home_screen.dart';
-import 'package:movimenta/screens/perfil/perfil_screen.dart';
-import 'package:movimenta/services/estoque_service.dart';
+import 'package:flutter/services.dart';
+import 'package:stokio/screens/alertas/alertas_screen.dart';
+import 'package:stokio/screens/estoque/estoque_screen.dart';
+import 'package:stokio/screens/historico/historico_screen.dart';
+import 'package:stokio/screens/home/home_screen.dart';
+import 'package:stokio/screens/perfil/perfil_screen.dart';
+import 'package:stokio/services/estoque_service.dart';
 
 /// Estrutura principal com a barra de navegação inferior.
 /// Configurações fica dentro de Perfil (e no ícone da Home).
@@ -39,7 +40,10 @@ class _ShellScreenState extends State<ShellScreen> {
           final qtdAlertas = estoque.alertas.length;
           return NavigationBar(
             selectedIndex: _indice,
-            onDestinationSelected: _ir,
+            onDestinationSelected: (i) {
+              HapticFeedback.selectionClick();
+              _ir(i);
+            },
             destinations: [
               const NavigationDestination(
                 icon: Icon(Icons.home_outlined),

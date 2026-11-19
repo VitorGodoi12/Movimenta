@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/cliente.dart';
-import 'package:movimenta/screens/alertas/lista_compras_screen.dart';
-import 'package:movimenta/screens/configuracoes/configuracoes_screen.dart';
-import 'package:movimenta/services/perfil_service.dart';
-import 'package:movimenta/theme/app_theme.dart';
+import 'package:stokio/models/cliente.dart';
+import 'package:stokio/screens/alertas/lista_compras_screen.dart';
+import 'package:stokio/screens/configuracoes/configuracoes_screen.dart';
+import 'package:stokio/screens/fornecedores/fornecedores_screen.dart';
+import 'package:stokio/screens/inventario/inventario_screen.dart';
+import 'package:stokio/screens/venda/venda_rapida_screen.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/theme/app_theme.dart';
 
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
@@ -68,6 +71,33 @@ class PerfilScreen extends StatelessWidget {
                 icone: Icons.storefront_outlined,
                 titulo: 'Dados do estabelecimento',
                 onTap: () => _editar(context),
+              ),
+              _Opcao(
+                icone: Icons.point_of_sale,
+                titulo: 'Venda rápida',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const VendaRapidaScreen()),
+                ),
+              ),
+              _Opcao(
+                icone: Icons.fact_check_outlined,
+                titulo: 'Inventário',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const InventarioScreen()),
+                ),
+              ),
+              _Opcao(
+                icone: Icons.local_shipping_outlined,
+                titulo: 'Fornecedores',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const FornecedoresScreen()),
+                ),
               ),
               _Opcao(
                 icone: Icons.shopping_cart_outlined,

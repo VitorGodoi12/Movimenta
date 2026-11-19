@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:movimenta/theme/app_theme.dart';
+import 'package:stokio/theme/app_theme.dart';
 
 /// Abre a câmera e devolve o código lido (ou digitado). Nulo se cancelar.
 Future<String?> lerCodigo(BuildContext context) {
@@ -14,8 +14,31 @@ Future<String?> lerCodigo(BuildContext context) {
   );
 }
 
+/// Modo contínuo: a câmera continua aberta e cada leitura chama [aoLer].
+/// O texto devolvido por [aoLer] aparece na tela como confirmação.
+Future<void> lerEmSequencia(
+  BuildContext context, {
+  required String? Function(String codigo) aoLer,
+  String dica = 'Escaneie os produtos',
+}) {
+  return Navigator.push<void>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ScannerScreen(aoLer: aoLer, dica: dica),
+      fullscreenDialog: true,
+    ),
+  );
+}
+
 class ScannerScreen extends StatefulWidget {
-  const ScannerScreen({super.key});
+  const ScannerScreen({
+    super.key,
+    this.aoLer,
+    this.dica = 'Aponte para o código de barras',
+  });
+
+  final String? Function(String codigo)? aoLer;
+  final String dica;
 
   @override
   State<ScannerScreen> createState() => _ScannerScreenState();
@@ -26,6 +49,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
   bool _lido = false;
+  String? _feedback;
+
+  bool get _continuo => widget.aoLer != null;
 
   @override
   void dispose() {
@@ -33,14 +59,24 @@ class _ScannerScreenState extends State<ScannerScreen> {
     super.dispose();
   }
 
+  void _processar(String codigo) {
+    if (_continuo) {
+      HapticFeedback.mediumImpact();
+      setState(() => _feedback = widget.aoLer!(codigo));
+    } else {
+      if (_lido) return;
+      _lido = true;
+      HapticFeedback.mediumImpact();
+      Navigator.pop(context, codigo);
+    }
+  }
+
   void _aoDetectar(BarcodeCapture captura) {
     if (_lido || ModalRoute.of(context)?.isCurrent != true) return;
     for (final b in captura.barcodes) {
       final valor = b.rawValue?.trim();
       if (valor != null && valor.isNotEmpty) {
-        _lido = true;
-        HapticFeedback.mediumImpact();
-        Navigator.pop(context, valor);
+        _processar(valor);
         return;
       }
     }
@@ -52,8 +88,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       builder: (_) => const _DigitarCodigoDialog(),
     );
     if (codigo != null && codigo.isNotEmpty && mounted) {
-      _lido = true;
-      Navigator.pop(context, codigo);
+      _processar(codigo);
     }
   }
 
@@ -144,10 +179,20 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         ],
                       ),
                       const Spacer(),
-                      const Text(
-                        'Aponte para o código de barras',
+                      if (_feedback != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: AppCores.roxo,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(_feedback!, textAlign: TextAlign.center),
+                        ),
+                      Text(
+                        widget.dica,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppCores.branco,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -159,6 +204,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         icon: const Icon(Icons.keyboard_outlined),
                         label: const Text('Digitar o código'),
                       ),
+                      if (_continuo)
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppCores.branco,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Concluir leitura'),
+                        ),
                     ],
                   ),
                 ),

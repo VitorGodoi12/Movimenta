@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/utils/formatadores.dart';
+import 'package:stokio/utils/formatadores.dart';
 
 /// Campo que abre o calendário. O "x" limpa a data.
 class CampoData extends StatelessWidget {

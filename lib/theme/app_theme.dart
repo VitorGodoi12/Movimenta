@@ -1,6 +1,7 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
-/// Paleta do Movimenta: roxo claro, branco e preto.
+/// Paleta do Stokio: roxo claro, branco e preto.
 /// Amarelo e vermelho aparecem só para sinalizar estoque baixo/zerado.
 class AppCores {
   AppCores._();
@@ -53,6 +54,12 @@ class AppTheme {
       scaffoldBackgroundColor: AppCores.branco,
       textTheme: texto,
       dividerColor: AppCores.linha,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppCores.branco,
         foregroundColor: AppCores.preto,

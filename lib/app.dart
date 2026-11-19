@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:movimenta/screens/login/boas_vindas_screen.dart';
-import 'package:movimenta/screens/shell_screen.dart';
-import 'package:movimenta/services/perfil_service.dart';
-import 'package:movimenta/theme/app_theme.dart';
+import 'package:stokio/screens/login/boas_vindas_screen.dart';
+import 'package:stokio/screens/shell_screen.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/theme/app_theme.dart';
 
-class MovimentaApp extends StatelessWidget {
-  const MovimentaApp({super.key});
+class StokioApp extends StatelessWidget {
+  const StokioApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Movimenta',
+      title: 'Stokio',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.claro(),
       locale: const Locale('pt', 'BR'),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/screens/scanner/scanner_screen.dart';
-import 'package:movimenta/services/estoque_service.dart';
-import 'package:movimenta/widgets/campo_data.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/screens/scanner/scanner_screen.dart';
+import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/widgets/campo_data.dart';
 
 /// Cadastro e edição de produto.
 /// Na edição a quantidade não aparece: ela muda por entradas, saídas e ajustes.
@@ -22,6 +22,8 @@ class ProdutoFormScreen extends StatefulWidget {
 class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   final _chave = GlobalKey<FormState>();
 
+  static String _dinheiro(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
+
   late final _nome = TextEditingController(text: widget.produto?.nome ?? '');
   late final _categoria =
       TextEditingController(text: widget.produto?.categoria ?? '');
@@ -34,12 +36,17 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   );
   late final _unidade =
       TextEditingController(text: widget.produto?.unidade ?? 'un');
+  late final _local = TextEditingController(text: widget.produto?.local ?? '');
   late final _preco = TextEditingController(
-    text: widget.produto == null
-        ? ''
-        : widget.produto!.preco.toStringAsFixed(2).replaceAll('.', ','),
+    text: widget.produto == null ? '' : _dinheiro(widget.produto!.preco),
+  );
+  late final _custo = TextEditingController(
+    text: (widget.produto?.custo ?? 0) > 0
+        ? _dinheiro(widget.produto!.custo)
+        : '',
   );
   late DateTime? _validade = widget.produto?.validade;
+  late String? _fornecedorId = widget.produto?.fornecedorId;
 
   bool get _editando => widget.produto != null;
 
@@ -52,7 +59,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       _quantidade,
       _minimo,
       _unidade,
-      _preco
+      _local,
+      _preco,
+      _custo,
     ]) {
       c.dispose();
     }
@@ -67,11 +76,17 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     return int.tryParse(v.trim()) == null ? 'Use só números.' : null;
   }
 
+  double? _lerValor(String? v) =>
+      double.tryParse((v ?? '').trim().replaceAll(',', '.'));
+
   String? _valor(String? v) {
     if (v == null || v.trim().isEmpty) return 'Preencha este campo.';
-    return double.tryParse(v.trim().replaceAll(',', '.')) == null
-        ? 'Use um valor como 12,50.'
-        : null;
+    return _lerValor(v) == null ? 'Use um valor como 12,50.' : null;
+  }
+
+  String? _valorOpcional(String? v) {
+    if (v == null || v.trim().isEmpty) return null;
+    return _lerValor(v) == null ? 'Use um valor como 8,90.' : null;
   }
 
   String? _validarCodigo(String? v) {
@@ -90,9 +105,11 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   void _salvar() {
     if (!_chave.currentState!.validate()) return;
 
-    final preco = double.parse(_preco.text.trim().replaceAll(',', '.'));
+    final preco = _lerValor(_preco.text)!;
+    final custo = _lerValor(_custo.text) ?? 0.0;
     final minimo = int.parse(_minimo.text.trim());
     final codigo = _codigo.text.trim().isEmpty ? null : _codigo.text.trim();
+    final local = _local.text.trim().isEmpty ? null : _local.text.trim();
 
     if (_editando) {
       final p = widget.produto!;
@@ -102,8 +119,11 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         ..minimo = minimo
         ..unidade = _unidade.text.trim()
         ..preco = preco
+        ..custo = custo
         ..codigoBarras = codigo
-        ..validade = _validade;
+        ..validade = _validade
+        ..local = local
+        ..fornecedorId = _fornecedorId;
       estoque.salvarAlteracoes(p);
     } else {
       estoque.adicionar(
@@ -114,9 +134,12 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
           quantidade: int.parse(_quantidade.text.trim()),
           minimo: minimo,
           preco: preco,
+          custo: custo,
           unidade: _unidade.text.trim(),
           codigoBarras: codigo,
           validade: _validade,
+          local: local,
+          fornecedorId: _fornecedorId,
         ),
       );
     }
@@ -125,8 +148,18 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
     final apenasNumeros = [FilteringTextInputFormatter.digitsOnly];
     final sugestoes = estoque.categorias.take(6).toList();
+    final decimal = const TextInputType.numberWithOptions(decimal: true);
+
+    Widget titulo(String texto) => Padding(
+          padding: const EdgeInsets.only(top: 24, bottom: 12),
+          child: Text(
+            texto,
+            style: t.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -135,8 +168,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       body: Form(
         key: _chave,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
           children: [
+            titulo('Identificação'),
             TextFormField(
               controller: _codigo,
               keyboardType: TextInputType.number,
@@ -168,7 +202,6 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                runSpacing: 0,
                 children: [
                   for (final c in sugestoes)
                     ActionChip(
@@ -178,7 +211,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: 14),
+            titulo('Estoque'),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -223,15 +256,14 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
+                  flex: 2,
                   child: TextFormField(
-                    controller: _preco,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    controller: _local,
+                    textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(
-                      labelText: 'Preço',
-                      prefixText: 'R\$ ',
+                      labelText: 'Local (opcional)',
+                      hintText: 'Prateleira 2',
                     ),
-                    validator: _valor,
                   ),
                 ),
               ],
@@ -241,6 +273,54 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
               rotulo: 'Data de validade (opcional)',
               valor: _validade,
               aoMudar: (d) => setState(() => _validade = d),
+            ),
+            titulo('Preços'),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _custo,
+                    keyboardType: decimal,
+                    decoration: const InputDecoration(
+                      labelText: 'Custo (opcional)',
+                      prefixText: 'R\$ ',
+                    ),
+                    validator: _valorOpcional,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _preco,
+                    keyboardType: decimal,
+                    decoration: const InputDecoration(
+                      labelText: 'Preço de venda',
+                      prefixText: 'R\$ ',
+                    ),
+                    validator: _valor,
+                  ),
+                ),
+              ],
+            ),
+            titulo('Compras'),
+            DropdownButtonFormField<String?>(
+              value: _fornecedorId,
+              isExpanded: true,
+              decoration:
+                  const InputDecoration(labelText: 'Fornecedor (opcional)'),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('Nenhum'),
+                ),
+                for (final f in estoque.fornecedores)
+                  DropdownMenuItem<String?>(
+                    value: f.id,
+                    child: Text(f.nome, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: (v) => setState(() => _fornecedorId = v),
             ),
             const SizedBox(height: 28),
             FilledButton(

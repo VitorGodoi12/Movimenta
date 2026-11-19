@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:movimenta/models/produto.dart';
-import 'package:movimenta/services/perfil_service.dart';
-import 'package:movimenta/theme/app_theme.dart';
-import 'package:movimenta/utils/formatadores.dart';
-import 'package:movimenta/widgets/nivel_estoque.dart';
-import 'package:movimenta/widgets/selo_situacao.dart';
+import 'package:stokio/models/produto.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/utils/formatadores.dart';
+import 'package:stokio/widgets/nivel_estoque.dart';
+import 'package:stokio/widgets/selo_situacao.dart';
 
 class ProdutoTile extends StatelessWidget {
   const ProdutoTile({
@@ -26,12 +26,17 @@ class ProdutoTile extends StatelessWidget {
     final situacaoValidade = produto.quantidade > 0
         ? produto.situacaoValidade(perfil.diasAvisoValidade)
         : SituacaoValidade.ok;
+    final local = (produto.local ?? '').trim();
+    final detalhe =
+        local.isEmpty ? produto.categoria : '${produto.categoria}, $local';
+    final inicial =
+        produto.nome.trim().isEmpty ? '?' : produto.nome.trim()[0].toUpperCase();
 
     return Material(
       color: AppCores.branco,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: AppCores.linha),
       ),
       child: InkWell(
@@ -44,6 +49,22 @@ class ProdutoTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // A cor do avatar já mostra a situação do estoque.
+                  Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: produto.situacao.fundo,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      inicial,
+                      style: t.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,7 +76,7 @@ class ProdutoTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          produto.categoria,
+                          detalhe,
                           style: t.bodySmall?.copyWith(color: AppCores.cinza),
                         ),
                       ],
@@ -65,7 +86,7 @@ class ProdutoTile extends StatelessWidget {
                   SeloSituacao(situacao: produto.situacao),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               NivelEstoque(produto: produto),
               const SizedBox(height: 10),
               Row(
