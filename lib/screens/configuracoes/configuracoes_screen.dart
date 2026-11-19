@@ -7,6 +7,7 @@ import 'package:stokio/services/exportacao_service.dart';
 import 'package:stokio/services/perfil_service.dart';
 import 'package:stokio/theme/app_theme.dart';
 import 'package:stokio/widgets/dialogos.dart';
+import 'package:stokio/utils/formatadores.dart';
 
 class ConfiguracoesScreen extends StatefulWidget {
   const ConfiguracoesScreen({super.key});
@@ -24,21 +25,53 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
 
   Future<void> _copiarBackup() async {
     await Clipboard.setData(ClipboardData(text: BackupService.exportar()));
+    await perfil.registrarBackup();
+    if (mounted) setState(() {});
     if (mounted) avisar(context, 'Backup copiado. Cole onde quiser guardar.');
   }
 
-  Future<void> _restaurar() async {
+  Future<void> _compartilharBackup() async {
+    final resultado = await Share.share(BackupService.exportar());
+    if (resultado.status == ShareResultStatus.success) {
+      await perfil.registrarBackup();
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _restaurar({bool somenteTeste = false}) async {
     final texto = await showDialog<String>(
       context: context,
       builder: (_) => const _RestaurarDialog(),
     );
     if (texto == null || texto.trim().isEmpty || !mounted) return;
 
+    try {
+      final teste = BackupService.testar(texto);
+      await showDialog<void>(
+        context: context,
+        builder: (dialogo) => AlertDialog(
+          title: const Text('Backup válido'),
+          content: Text(
+            '${teste.produtos} produtos, ${teste.movimentos} movimentações e ${teste.fornecedores} fornecedores.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogo),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (mounted) avisar(context, 'Arquivo de backup inválido ou incompleto.');
+      return;
+    }
+    if (!mounted || somenteTeste) return;
+
     final ok = await confirmar(
       context,
       titulo: 'Substituir os dados?',
-      texto:
-          'Os produtos e o histórico atuais serão trocados pelos do backup.',
+      texto: 'Os produtos e o histórico atuais serão trocados pelos do backup.',
       rotuloConfirmar: 'Restaurar',
       destrutivo: true,
     );
@@ -49,7 +82,10 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
       if (mounted) avisar(context, 'Backup restaurado.');
     } catch (_) {
       if (mounted) {
-        avisar(context, 'Não consegui ler esse backup. Confira o texto colado.');
+        avisar(
+          context,
+          'Não consegui ler esse backup. Confira o texto colado.',
+        );
       }
     }
   }
@@ -71,8 +107,7 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
     final ok = await confirmar(
       context,
       titulo: 'Apagar todos os dados?',
-      texto:
-          'Todos os produtos e o histórico serão apagados deste aparelho. Isso não pode ser desfeito.',
+      texto: 'Todos os produtos e o histórico serão apagados deste aparelho. Isso não pode ser desfeito.',
       rotuloConfirmar: 'Apagar tudo',
       destrutivo: true,
     );
@@ -87,8 +122,13 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
     final t = Theme.of(context).textTheme;
     final titulo = t.titleMedium?.copyWith(fontWeight: FontWeight.w800);
 
-    Widget opcao(IconData icone, String texto, VoidCallback aoTocar,
-        {String? detalhe, bool perigo = false}) {
+    Widget opcao(
+      IconData icone,
+      String texto,
+      VoidCallback aoTocar, {
+      String? detalhe,
+      bool perigo = false,
+    }) {
       return ListTile(
         contentPadding: EdgeInsets.zero,
         leading: Icon(icone, color: perigo ? AppCores.zerado : null),
@@ -130,6 +170,11 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
           ),
           const SizedBox(height: 28),
           Text('Backup', style: titulo),
+          Text(
+            perfil.ultimoBackup == null
+                ? 'Nenhum backup registrado'
+                : 'Último backup: ${formatarData(perfil.ultimoBackup!)}',
+          ),
           const SizedBox(height: 4),
           Text(
             'Seus dados ficam só neste aparelho. O backup leva tudo para outro celular.',
@@ -139,10 +184,16 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
           opcao(
             Icons.ios_share,
             'Compartilhar backup',
-            () => Share.share(BackupService.exportar()),
+            _compartilharBackup,
             detalhe: 'Envie por WhatsApp, e-mail ou salve nas notas.',
           ),
           opcao(Icons.copy_outlined, 'Copiar backup', _copiarBackup),
+          opcao(
+            Icons.verified_outlined,
+            'Testar um backup',
+            () => _restaurar(somenteTeste: true),
+            detalhe: 'Verifica o texto sem substituir os dados atuais.',
+          ),
           opcao(
             Icons.restore,
             'Restaurar backup',
@@ -156,7 +207,7 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
             Icons.table_chart_outlined,
             'Exportar estoque (CSV)',
             () => ExportacaoService.compartilhar(
-              'estoque-movimenta.csv',
+              'estoque-stokio.csv',
               ExportacaoService.csvEstoque(),
             ),
             detalhe: 'Abre no Excel ou Google Planilhas.',
@@ -165,20 +216,27 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
             Icons.history,
             'Exportar histórico (CSV)',
             () => ExportacaoService.compartilhar(
-              'historico-movimenta.csv',
+              'historico-stokio.csv',
               ExportacaoService.csvHistorico(),
             ),
           ),
           const SizedBox(height: 20),
           Text('Dados', style: titulo),
           const SizedBox(height: 4),
-          opcao(Icons.auto_awesome_outlined, 'Carregar dados de exemplo',
-              _exemplo),
-          opcao(Icons.delete_outline, 'Apagar todos os dados', _apagar,
-              perigo: true),
+          opcao(
+            Icons.auto_awesome_outlined,
+            'Carregar dados de exemplo',
+            _exemplo,
+          ),
+          opcao(
+            Icons.delete_outline,
+            'Apagar todos os dados',
+            _apagar,
+            perigo: true,
+          ),
           const SizedBox(height: 24),
           Text(
-            'Stokio 1.1.0',
+            'Stokio 1.2.0',
             style: t.bodySmall?.copyWith(color: AppCores.cinza),
           ),
         ],

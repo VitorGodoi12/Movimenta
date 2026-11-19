@@ -32,6 +32,14 @@ Ao ler ou digitar um código de barras, o aplicativo abre o produto cadastrado. 
 
 A atualização do aplicativo Android conserva os dados locais. Backups anteriores do Movimenta também podem ser restaurados pelo Stokio.
 
+## Recursos da versão 1.2
+
+- Início, Estoque, Vender e Mais são as quatro abas principais. Use **Mais** para abrir fornecedores, histórico, inventário e configurações.
+- Cadastre unidades por caixa ou fardo para converter entradas. Ao colar uma lista, complete os fatores solicitados na prévia. Cadastros antigos medidos em caixa ou fardo preservam sua unidade.
+- Entradas com datas diferentes ficam em lotes separados. As saídas consomem primeiro o lote que vence antes.
+- A reposição considera as vendas dos últimos 30 dias, o saldo, o prazo de cada fornecedor e sete dias de reserva. Revise a mensagem antes de abrir o WhatsApp.
+- O lembrete semanal de backup aparece no Início. Em **Mais → Configurações e backup**, teste um backup sem substituir os dados do aparelho.
+
 ## Compilar e testar
 
 ```sh

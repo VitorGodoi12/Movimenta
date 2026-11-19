@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:stokio/models/fornecedor.dart';
@@ -137,13 +138,34 @@ class EstoqueService extends ChangeNotifier {
       _produtos.where((p) => p.fornecedorId == f.id).length;
 
   List<ItemCompra> get listaCompras {
-    final itens = <ItemCompra>[];
-    for (final p in _produtos) {
-      if (p.quantidade <= p.minimo) {
-        var sugerido = p.minimo * 2 - p.quantidade;
-        if (sugerido < 1) sugerido = 1;
-        itens.add(ItemCompra(p, sugerido));
+    const periodo = 30;
+    const diasDeReserva = 7;
+    final vendas = <String, int>{};
+    for (final movimento in _historico) {
+      final dias = diasDesde(movimento.data);
+      if (movimento.tipo == TipoMovimento.saida &&
+          movimento.motivo == Motivos.venda &&
+          dias >= 0 &&
+          dias < periodo) {
+        vendas.update(
+          movimento.produtoId,
+          (total) => total - movimento.delta,
+          ifAbsent: () => -movimento.delta,
+        );
       }
+    }
+    final itens = <ItemCompra>[];
+    for (final produto in _produtos) {
+      final prazo = fornecedorDe(produto)?.prazoDias ?? 3;
+      final vendido = vendas[produto.id] ?? 0;
+      final alvoPelasVendas = (vendido / periodo * (prazo + diasDeReserva))
+          .ceil();
+      final alvoMinimo = produto.quantidade <= produto.minimo
+          ? math.max(1, produto.minimo * 2)
+          : 0;
+      final sugerido =
+          math.max(alvoMinimo, alvoPelasVendas) - produto.quantidade;
+      if (sugerido > 0) itens.add(ItemCompra(produto, sugerido));
     }
     itens.sort((a, b) => a.produto.quantidade.compareTo(b.produto.quantidade));
     return itens;
@@ -188,13 +210,17 @@ class EstoqueService extends ChangeNotifier {
   }
 
   Iterable<Movimentacao> _saidasComMotivo(String motivo, int dias) =>
-      _historico.where((m) =>
-          m.tipo == TipoMovimento.saida &&
-          m.motivo == motivo &&
-          diasDesde(m.data) < dias);
+      _historico.where(
+        (m) =>
+            m.tipo == TipoMovimento.saida &&
+            m.motivo == motivo &&
+            diasDesde(m.data) < dias,
+      );
 
-  int perdasUnidades(int dias) => _saidasComMotivo(Motivos.perda, dias)
-      .fold(0, (soma, m) => soma + (-m.delta));
+  int perdasUnidades(int dias) => _saidasComMotivo(
+    Motivos.perda,
+    dias,
+  ).fold(0, (soma, m) => soma + (-m.delta));
 
   double perdasValor(int dias) {
     var total = 0.0;
@@ -245,11 +271,30 @@ class EstoqueService extends ChangeNotifier {
     _mudou();
   }
 
+  Produto? _produtoImportacao(ItemImportado item, String unidade) {
+    final chave = chaveProdutoImportado(item.nome, unidade, item.categoria);
+    final encontrados = _produtos.where(
+      (p) => chaveProdutoImportado(p.nome, p.unidade, p.categoria) == chave,
+    );
+    return encontrados.length == 1 ? encontrados.single : null;
+  }
+
+  int fatorImportacao(ItemImportado item) {
+    if (!item.emEmbalagem || _produtoImportacao(item, item.unidade) != null) {
+      return 1;
+    }
+    return item.unidadesPorEmbalagem ??
+        _produtoImportacao(item, 'un')?.fatorEmbalagem(item.unidade) ??
+        0;
+  }
+
   Future<void> importarContagem(List<ItemImportado> itens) async {
     final index = <String, List<Produto>>{};
     for (final produto in _produtos) {
       final chave = chaveProdutoImportado(
-        produto.nome, produto.unidade, produto.categoria,
+        produto.nome,
+        produto.unidade,
+        produto.categoria,
       );
       (index[chave] ??= []).add(produto);
     }
@@ -258,39 +303,59 @@ class EstoqueService extends ChangeNotifier {
     final novosProdutos = <Produto>[];
     final movimentos = <Movimentacao>[];
     final agora = DateTime.now();
+    final destinos = <String>{};
     for (final item in itens) {
-      final semCategoria = chaveProdutoImportado(
-        item.nome, item.unidade, 'Outros',
-      );
-      final correspondentes = index[item.chave] ?? index[semCategoria];
+      final fator = fatorImportacao(item);
+      if (fator <= 0 || item.quantidade * fator > 999999999) {
+        throw StateError('Confira a conversão de embalagem de ${item.nome}.');
+      }
+      final unidade =
+          item.emEmbalagem && _produtoImportacao(item, item.unidade) == null
+          ? 'un'
+          : item.unidade;
+      final quantidade = item.quantidade * fator;
+      final chave = chaveProdutoImportado(item.nome, unidade, item.categoria);
+      if (!destinos.add(chave)) {
+        throw StateError(
+          'A lista tem mais de uma contagem para ${item.nome}. Revise o texto.',
+        );
+      }
+      final semCategoria = chaveProdutoImportado(item.nome, unidade, 'Outros');
+      final correspondentes = index[chave] ?? index[semCategoria];
       if (correspondentes != null && correspondentes.length > 1) {
         throw StateError(
           'Há mais de um produto chamado ${item.nome} com a mesma unidade. Revise os cadastros antes de importar.',
         );
       }
       final anterior = correspondentes?.single;
-      final classificar = anterior != null
-          && item.chave != semCategoria
-          && index[item.chave] == null;
+      final classificar =
+          anterior != null && chave != semCategoria && index[chave] == null;
       if (classificar) index.remove(semCategoria);
       final produto = anterior == null
           ? Produto(
               id: novoId(),
               nome: item.nome,
               categoria: item.categoria,
-              quantidade: item.quantidade,
+              quantidade: quantidade,
               minimo: 0,
               preco: 0,
-              unidade: item.unidade,
+              unidade: unidade,
             )
-          : (Produto.fromJson(anterior.toJson())..quantidade = item.quantidade);
+          : Produto.fromJson(anterior.toJson());
       if (classificar) produto.categoria = item.categoria;
+      if (item.emEmbalagem && unidade != item.unidade) {
+        if (item.unidade == 'cx') produto.unidadesPorCaixa = fator;
+        if (item.unidade == 'fardo') produto.unidadesPorFardo = fator;
+      }
+      final lotes = anterior == null
+          ? produto.lotes
+          : produto.alterarSaldo(quantidade - anterior.quantidade);
       if (anterior == null) {
         novosProdutos.add(produto);
       } else {
         alteracoes[anterior] = produto;
       }
-      final delta = item.quantidade - (anterior?.quantidade ?? 0);
+      final delta = quantidade - (anterior?.quantidade ?? 0);
       if (anterior == null || delta != 0) {
         movimentos.add(
           Movimentacao(
@@ -303,6 +368,7 @@ class EstoqueService extends ChangeNotifier {
             delta: delta,
             data: agora,
             motivo: 'Importação de estoque',
+            lotes: lotes,
           ),
         );
       }
@@ -319,7 +385,9 @@ class EstoqueService extends ChangeNotifier {
         for (final produto in novosProdutos) produto.toJson(),
       ],
       'historico': [for (final movimento in historico) movimento.toJson()],
-      'fornecedores': [for (final fornecedor in _fornecedores) fornecedor.toJson()],
+      'fornecedores': [
+        for (final fornecedor in _fornecedores) fornecedor.toJson(),
+      ],
     };
     try {
       if (!await Armazenamento.gravar(_chave, jsonEncode(dados))) {
@@ -332,7 +400,9 @@ class EstoqueService extends ChangeNotifier {
     }
     for (final MapEntry(key: anterior, value: novo) in alteracoes.entries) {
       anterior
-        ..quantidade = novo.quantidade
+        ..copiarLotes(novo)
+        ..unidadesPorCaixa = novo.unidadesPorCaixa
+        ..unidadesPorFardo = novo.unidadesPorFardo
         ..categoria = novo.categoria;
     }
     _produtos.addAll(novosProdutos);
@@ -388,19 +458,10 @@ class EstoqueService extends ChangeNotifier {
       case TipoMovimento.cadastro:
         return null;
     }
-    if (delta == 0) return null;
+    if (quantidade < 0 || delta == 0) return null;
 
-    produto.quantidade = atual + delta;
-
-    if (tipo == TipoMovimento.entrada && validade != null) {
-      // Guarda sempre a validade mais próxima do que está na prateleira.
-      final antiga = produto.validade;
-      if (antiga == null || atual <= 0 || validade.isBefore(antiga)) {
-        produto.validade = validade;
-      }
-    }
-
-    return _registrar(produto, tipo, delta, motivo: motivo);
+    final lotes = produto.alterarSaldo(delta, vencimento: validade);
+    return _registrar(produto, tipo, delta, motivo: motivo, lotes: lotes);
   }
 
   /// Para ajuste, [quantidade] é a contagem real (o total que existe agora).
@@ -412,8 +473,13 @@ class EstoqueService extends ChangeNotifier {
     String? motivo,
     DateTime? validade,
   }) {
-    final mov = _aplicar(produto, tipo, quantidade,
-        motivo: motivo, validade: validade);
+    final mov = _aplicar(
+      produto,
+      tipo,
+      quantidade,
+      motivo: motivo,
+      validade: validade,
+    );
     if (mov != null) _mudou();
     return mov;
   }
@@ -430,9 +496,13 @@ class EstoqueService extends ChangeNotifier {
     }
 
     final movs = <Movimentacao>[];
-    for (final MapEntry(key: produto, value: quantidade) in quantidades.entries) {
+    for (final MapEntry(key: produto, value: quantidade)
+        in quantidades.entries) {
       final movimento = _aplicar(
-        produto, TipoMovimento.saida, quantidade, motivo: Motivos.venda,
+        produto,
+        TipoMovimento.saida,
+        quantidade,
+        motivo: Motivos.venda,
       );
       if (movimento != null) movs.add(movimento);
     }
@@ -446,8 +516,12 @@ class EstoqueService extends ChangeNotifier {
     contagens.forEach((id, contagem) {
       final p = _buscar(id);
       if (p == null) return;
-      final m =
-          _aplicar(p, TipoMovimento.ajuste, contagem, motivo: Motivos.inventario);
+      final m = _aplicar(
+        p,
+        TipoMovimento.ajuste,
+        contagem,
+        motivo: Motivos.inventario,
+      );
       if (m != null) movs.add(m);
     });
     if (movs.isNotEmpty) _mudou();
@@ -458,7 +532,16 @@ class EstoqueService extends ChangeNotifier {
     final i = _historico.indexWhere((m) => m.id == mov.id);
     if (i < 0) return false;
     final p = _buscar(mov.produtoId);
-    if (p != null) {
+    if (p != null && mov.lotes.isNotEmpty) {
+      if (mov.lotes.entries.any(
+        (lote) => lote.value > (p.lotes[lote.key] ?? 0),
+      )) {
+        return false;
+      }
+      p.aplicarLotes({
+        for (final lote in mov.lotes.entries) lote.key: -lote.value,
+      });
+    } else if (p != null) {
       final novo = p.quantidade - mov.delta;
       p.quantidade = novo < 0 ? 0 : novo;
     }
@@ -486,6 +569,7 @@ class EstoqueService extends ChangeNotifier {
     int delta, {
     String? motivo,
     DateTime? data,
+    Map<DateTime?, int> lotes = const {},
   }) {
     final mov = Movimentacao(
       id: novoId(),
@@ -494,6 +578,7 @@ class EstoqueService extends ChangeNotifier {
       tipo: tipo,
       delta: delta,
       data: data ?? DateTime.now(),
+      lotes: lotes,
       motivo: motivo,
     );
     _historico.insert(0, mov);
@@ -514,10 +599,10 @@ class EstoqueService extends ChangeNotifier {
   // ---------- Persistência ----------
 
   Map<String, dynamic> toJson() => {
-        'produtos': _produtos.map((p) => p.toJson()).toList(),
-        'historico': _historico.map((m) => m.toJson()).toList(),
-        'fornecedores': _fornecedores.map((f) => f.toJson()).toList(),
-      };
+    'produtos': _produtos.map((p) => p.toJson()).toList(),
+    'historico': _historico.map((m) => m.toJson()).toList(),
+    'fornecedores': _fornecedores.map((f) => f.toJson()).toList(),
+  };
 
   /// Valida tudo antes de trocar os dados atuais.
   void aplicarJson(Map<String, dynamic> j) {
@@ -566,18 +651,30 @@ class EstoqueService extends ChangeNotifier {
     DateTime em(int dias) => agora.add(Duration(days: dias));
 
     final f1 = Fornecedor(
-        id: novoId(), nome: 'Distribuidora Boa Compra', telefone: '11999998888');
+      id: novoId(),
+      nome: 'Distribuidora Boa Compra',
+      telefone: '11999998888',
+    );
     final f2 = Fornecedor(
-        id: novoId(), nome: 'Laticínios da Serra', telefone: '11988887777');
+      id: novoId(),
+      nome: 'Laticínios da Serra',
+      telefone: '11988887777',
+    );
     _fornecedores.addAll([f1, f2]);
 
-    Produto novo(String nome, String cat, int qtd, int min, double preco,
-        {double custo = 0,
-        String un = 'un',
-        String? codigo,
-        DateTime? validade,
-        String? local,
-        Fornecedor? fornecedor}) {
+    Produto novo(
+      String nome,
+      String cat,
+      int qtd,
+      int min,
+      double preco, {
+      double custo = 0,
+      String un = 'un',
+      String? codigo,
+      DateTime? validade,
+      String? local,
+      Fornecedor? fornecedor,
+    }) {
       final p = Produto(
         id: novoId(),
         nome: nome,
@@ -596,54 +693,185 @@ class EstoqueService extends ChangeNotifier {
       return p;
     }
 
-    void mov(Produto p, TipoMovimento t, int delta, Duration atras,
-        [String? motivo]) {
+    void mov(
+      Produto p,
+      TipoMovimento t,
+      int delta,
+      Duration atras, [
+      String? motivo,
+    ]) {
       _registrar(p, t, delta, motivo: motivo, data: agora.subtract(atras));
     }
 
-    final cafe = novo('Café torrado em grão', 'Cafés', 24, 10, 38.90,
-        custo: 26, un: 'pct', codigo: '7891000100103', validade: em(180),
-        local: 'Prateleira 1', fornecedor: f1);
-    final leite = novo('Leite integral 1L', 'Laticínios', 6, 12, 5.49,
-        custo: 3.9, codigo: '7891000315507', validade: em(3),
-        local: 'Geladeira', fornecedor: f2);
-    final acucar = novo('Açúcar refinado 1kg', 'Mercearia', 18, 8, 4.99,
-        custo: 3.2, validade: em(200), local: 'Prateleira 2', fornecedor: f1);
-    final copo = novo('Copo descartável 200ml', 'Descartáveis', 0, 50, 0.35,
-        custo: 0.2, local: 'Depósito', fornecedor: f1);
-    final pao = novo('Pão de queijo congelado', 'Congelados', 9, 10, 29.90,
-        custo: 19, un: 'pct', validade: em(20), local: 'Freezer',
-        fornecedor: f1);
-    final filtro = novo('Filtro de papel nº 103', 'Descartáveis', 40, 15, 7.80,
-        custo: 4.5, un: 'cx', local: 'Prateleira 1', fornecedor: f1);
-    final choco = novo('Chocolate em pó 200g', 'Mercearia', 0, 6, 9.90,
-        custo: 6.4, validade: em(90), local: 'Prateleira 2', fornecedor: f1);
-    final agua = novo('Água mineral 500ml', 'Bebidas', 72, 24, 2.50,
-        custo: 1.4, codigo: '7894900011517', validade: em(300),
-        local: 'Depósito', fornecedor: f1);
-    final iogurte = novo('Iogurte natural 170g', 'Laticínios', 5, 6, 3.80,
-        custo: 2.3, validade: em(-2), local: 'Geladeira', fornecedor: f2);
+    final cafe = novo(
+      'Café torrado em grão',
+      'Cafés',
+      24,
+      10,
+      38.90,
+      custo: 26,
+      un: 'pct',
+      codigo: '7891000100103',
+      validade: em(180),
+      local: 'Prateleira 1',
+      fornecedor: f1,
+    );
+    final leite = novo(
+      'Leite integral 1L',
+      'Laticínios',
+      6,
+      12,
+      5.49,
+      custo: 3.9,
+      codigo: '7891000315507',
+      validade: em(3),
+      local: 'Geladeira',
+      fornecedor: f2,
+    );
+    final acucar = novo(
+      'Açúcar refinado 1kg',
+      'Mercearia',
+      18,
+      8,
+      4.99,
+      custo: 3.2,
+      validade: em(200),
+      local: 'Prateleira 2',
+      fornecedor: f1,
+    );
+    final copo = novo(
+      'Copo descartável 200ml',
+      'Descartáveis',
+      0,
+      50,
+      0.35,
+      custo: 0.2,
+      local: 'Depósito',
+      fornecedor: f1,
+    );
+    final pao = novo(
+      'Pão de queijo congelado',
+      'Congelados',
+      9,
+      10,
+      29.90,
+      custo: 19,
+      un: 'pct',
+      validade: em(20),
+      local: 'Freezer',
+      fornecedor: f1,
+    );
+    final filtro = novo(
+      'Filtro de papel nº 103',
+      'Descartáveis',
+      40,
+      15,
+      7.80,
+      custo: 4.5,
+      un: 'cx',
+      local: 'Prateleira 1',
+      fornecedor: f1,
+    );
+    final choco = novo(
+      'Chocolate em pó 200g',
+      'Mercearia',
+      0,
+      6,
+      9.90,
+      custo: 6.4,
+      validade: em(90),
+      local: 'Prateleira 2',
+      fornecedor: f1,
+    );
+    final agua = novo(
+      'Água mineral 500ml',
+      'Bebidas',
+      72,
+      24,
+      2.50,
+      custo: 1.4,
+      codigo: '7894900011517',
+      validade: em(300),
+      local: 'Depósito',
+      fornecedor: f1,
+    );
+    final iogurte = novo(
+      'Iogurte natural 170g',
+      'Laticínios',
+      5,
+      6,
+      3.80,
+      custo: 2.3,
+      validade: em(-2),
+      local: 'Geladeira',
+      fornecedor: f2,
+    );
 
-    mov(leite, TipoMovimento.saida, -8, const Duration(days: 3, hours: 2),
-        Motivos.venda);
-    mov(agua, TipoMovimento.entrada, 48, const Duration(days: 2, hours: 5),
-        Motivos.compra);
-    mov(choco, TipoMovimento.saida, -6, const Duration(days: 1, hours: 3),
-        Motivos.venda);
-    mov(copo, TipoMovimento.saida, -120, const Duration(days: 1, hours: 1),
-        Motivos.uso);
-    mov(iogurte, TipoMovimento.saida, -3, const Duration(hours: 20),
-        Motivos.perda);
-    mov(cafe, TipoMovimento.entrada, 12, const Duration(hours: 5),
-        Motivos.compra);
+    mov(
+      leite,
+      TipoMovimento.saida,
+      -8,
+      const Duration(days: 3, hours: 2),
+      Motivos.venda,
+    );
+    mov(
+      agua,
+      TipoMovimento.entrada,
+      48,
+      const Duration(days: 2, hours: 5),
+      Motivos.compra,
+    );
+    mov(
+      choco,
+      TipoMovimento.saida,
+      -6,
+      const Duration(days: 1, hours: 3),
+      Motivos.venda,
+    );
+    mov(
+      copo,
+      TipoMovimento.saida,
+      -120,
+      const Duration(days: 1, hours: 1),
+      Motivos.uso,
+    );
+    mov(
+      iogurte,
+      TipoMovimento.saida,
+      -3,
+      const Duration(hours: 20),
+      Motivos.perda,
+    );
+    mov(
+      cafe,
+      TipoMovimento.entrada,
+      12,
+      const Duration(hours: 5),
+      Motivos.compra,
+    );
     mov(pao, TipoMovimento.saida, -4, const Duration(hours: 2), Motivos.venda);
-    mov(acucar, TipoMovimento.saida, -2, const Duration(days: 4),
-        Motivos.venda);
-    mov(filtro, TipoMovimento.saida, -5, const Duration(days: 5),
-        Motivos.venda);
+    mov(
+      acucar,
+      TipoMovimento.saida,
+      -2,
+      const Duration(days: 4),
+      Motivos.venda,
+    );
+    mov(
+      filtro,
+      TipoMovimento.saida,
+      -5,
+      const Duration(days: 5),
+      Motivos.venda,
+    );
     mov(cafe, TipoMovimento.saida, -6, const Duration(days: 2), Motivos.venda);
-    mov(agua, TipoMovimento.saida, -14, const Duration(days: 1, hours: 6),
-        Motivos.venda);
+    mov(
+      agua,
+      TipoMovimento.saida,
+      -14,
+      const Duration(days: 1, hours: 6),
+      Motivos.venda,
+    );
 
     _historico.sort((a, b) => b.data.compareTo(a.data));
     _mudou();

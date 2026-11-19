@@ -9,7 +9,7 @@ import 'package:stokio/widgets/dialogos.dart';
 import 'package:stokio/widgets/estado_vazio.dart';
 
 /// Lista de reposição agrupada por fornecedor.
-/// A quantidade sugerida leva o produto a 2x o estoque mínimo.
+/// Usa vendas recentes, saldo e prazo do fornecedor.
 class ListaComprasScreen extends StatefulWidget {
   const ListaComprasScreen({super.key});
 
@@ -38,8 +38,14 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
       avisar(context, 'Todos os itens deste fornecedor já foram marcados.');
       return;
     }
-    final texto = 'Olá! Gostaria de fazer um pedido:\n${_linhas(pend)}\nObrigado!';
-    final ok = await abrirWhatsapp(f.telefone, texto);
+    final texto =
+        'Olá! Gostaria de fazer um pedido:\n${_linhas(pend)}\nObrigado!';
+    final revisado = await showDialog<String>(
+      context: context,
+      builder: (_) => _RevisarPedido(texto: texto),
+    );
+    if (revisado == null || revisado.isEmpty || !mounted) return;
+    final ok = await abrirWhatsapp(f.telefone, revisado);
     if (!ok && mounted) avisar(context, 'Não consegui abrir o WhatsApp.');
   }
 
@@ -63,18 +69,16 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
         // Agrupa por fornecedor; quem não tem fornecedor fica por último.
         final grupos = <String, List<ItemCompra>>{};
         for (final i in itens) {
-          final chave =
-              _fornecedor(i.produto.fornecedorId ?? '') == null
-                  ? ''
-                  : i.produto.fornecedorId!;
+          final chave = _fornecedor(i.produto.fornecedorId ?? '') == null
+              ? ''
+              : i.produto.fornecedorId!;
           grupos.putIfAbsent(chave, () => []).add(i);
         }
         final chaves = grupos.keys.toList()
           ..sort((a, b) {
             if (a.isEmpty) return 1;
             if (b.isEmpty) return -1;
-            return _fornecedor(a)!
-                .nome
+            return _fornecedor(a)!.nome
                 .toLowerCase()
                 .compareTo(_fornecedor(b)!.nome.toLowerCase());
           });
@@ -91,8 +95,9 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
                   Expanded(
                     child: Text(
                       f?.nome ?? 'Sem fornecedor',
-                      style:
-                          t.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                      style: t.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   if (f != null && f.telefone.isNotEmpty)
@@ -126,8 +131,7 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
                   p.nome,
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    decoration:
-                        marcado ? TextDecoration.lineThrough : null,
+                    decoration: marcado ? TextDecoration.lineThrough : null,
                   ),
                 ),
                 subtitle: Text('Tem ${p.quantidade}, mínimo ${p.minimo}'),
@@ -146,7 +150,7 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
               ? const EstadoVazio(
                   icone: Icons.shopping_cart_outlined,
                   titulo: 'Nada para repor agora',
-                  texto: 'Quando um produto chegar ao mínimo, ele aparece aqui.',
+                  texto: 'As sugestões aparecem quando a previsão de vendas ou o mínimo indicam reposição.',
                 )
               : Column(
                   children: [
@@ -155,7 +159,7 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'A quantidade sugerida leva cada produto a 2 vezes o estoque mínimo. Marque o que já comprou.',
+                          'A sugestão considera as vendas dos últimos 30 dias, o saldo e o prazo do fornecedor, com reserva de sete dias.',
                           style: t.bodyMedium?.copyWith(color: AppCores.cinza),
                         ),
                       ),
@@ -185,4 +189,38 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
       },
     );
   }
+}
+
+class _RevisarPedido extends StatefulWidget {
+  const _RevisarPedido({required this.texto});
+  final String texto;
+
+  @override
+  State<_RevisarPedido> createState() => _RevisarPedidoState();
+}
+
+class _RevisarPedidoState extends State<_RevisarPedido> {
+  late final _texto = TextEditingController(text: widget.texto);
+
+  @override
+  void dispose() {
+    _texto.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Revisar pedido'),
+    content: TextField(controller: _texto, minLines: 4, maxLines: 8),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _texto.text.trim()),
+        child: const Text('Abrir WhatsApp'),
+      ),
+    ],
+  );
 }

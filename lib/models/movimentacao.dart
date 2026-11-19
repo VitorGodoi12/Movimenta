@@ -24,6 +24,7 @@ class Movimentacao {
     required this.delta,
     required this.data,
     this.motivo,
+    this.lotes = const {},
   });
 
   final String id;
@@ -35,24 +36,36 @@ class Movimentacao {
   final int delta;
   final DateTime data;
   final String? motivo;
+  final Map<DateTime?, int> lotes;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'produtoId': produtoId,
-        'produtoNome': produtoNome,
-        'tipo': tipo.name,
-        'delta': delta,
-        'data': data.toIso8601String(),
-        'motivo': motivo,
-      };
+    'id': id,
+    'produtoId': produtoId,
+    'produtoNome': produtoNome,
+    'tipo': tipo.name,
+    'delta': delta,
+    'data': data.toIso8601String(),
+    'motivo': motivo,
+    'lotes': [
+      for (final MapEntry(key: data, value: qtd) in lotes.entries)
+        {'validade': data?.toIso8601String(), 'delta': qtd},
+    ],
+  };
 
   factory Movimentacao.fromJson(Map<String, dynamic> j) => Movimentacao(
-        id: j['id'] as String,
-        produtoId: j['produtoId'] as String,
-        produtoNome: j['produtoNome'] as String,
-        tipo: TipoMovimento.values.byName(j['tipo'] as String),
-        delta: (j['delta'] as num).toInt(),
-        data: DateTime.parse(j['data'] as String),
-        motivo: j['motivo'] as String?,
-      );
+    id: j['id'] as String,
+    produtoId: j['produtoId'] as String,
+    produtoNome: j['produtoNome'] as String,
+    tipo: TipoMovimento.values.byName(j['tipo'] as String),
+    delta: (j['delta'] as num).toInt(),
+    data: DateTime.parse(j['data'] as String),
+    motivo: j['motivo'] as String?,
+    lotes: {
+      for (final lote in (j['lotes'] as List?) ?? const [])
+        (lote['validade'] == null
+                ? null
+                : DateTime.parse(lote['validade'] as String)):
+            (lote['delta'] as num).toInt(),
+    },
+  );
 }

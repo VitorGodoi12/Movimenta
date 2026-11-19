@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:stokio/models/produto.dart';
-import 'package:stokio/screens/scanner/scanner_screen.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter/services.dart';
 import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/theme/app_theme.dart';
 import 'package:stokio/utils/formatadores.dart';
@@ -17,7 +20,14 @@ class _ItemCarrinho {
 /// Venda de balcão: escaneie ou busque os produtos, confira o total
 /// e finalize. Cada item vira uma saída com motivo "Venda".
 class VendaRapidaScreen extends StatefulWidget {
-  const VendaRapidaScreen({super.key});
+  const VendaRapidaScreen({
+    super.key,
+    this.incorporada = false,
+    this.ativa = true,
+  });
+
+  final bool incorporada;
+  final bool ativa;
 
   @override
   State<VendaRapidaScreen> createState() => _VendaRapidaScreenState();
@@ -25,6 +35,25 @@ class VendaRapidaScreen extends StatefulWidget {
 
 class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
   final List<_ItemCarrinho> _itens = [];
+  bool _camera = false;
+  String? _ultimoCodigo;
+  String? _leitura;
+  Timer? _limparLeitura;
+
+  @override
+  void dispose() {
+    _limparLeitura?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant VendaRapidaScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.ativa) {
+      _camera = false;
+      _ultimoCodigo = null;
+    }
+  }
 
   double get _total =>
       _itens.fold(0.0, (soma, i) => soma + i.quantidade * i.produto.preco);
@@ -57,19 +86,37 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
     });
   }
 
-  Future<void> _escanear() {
-    return lerEmSequencia(
-      context,
-      dica: 'Escaneie os produtos da venda',
-      aoLer: (codigo) {
-        final p = estoque.porCodigo(codigo);
-        if (p == null) return 'Código $codigo não cadastrado';
-        return _adicionar(p).$2;
-      },
-    );
+  void _escanear() {
+    setState(() {
+      _camera = !_camera;
+      _ultimoCodigo = null;
+      _leitura = null;
+    });
+  }
+
+  void _detectar(BarcodeCapture captura) {
+    if (!widget.ativa || !_camera || ModalRoute.of(context)?.isCurrent != true)
+      return;
+    for (final barcode in captura.barcodes) {
+      final codigo = barcode.rawValue?.trim();
+      if (codigo == null || codigo.isEmpty || codigo == _ultimoCodigo) continue;
+      _ultimoCodigo = codigo;
+      final produto = estoque.porCodigo(codigo);
+      final leitura = produto == null
+          ? 'Código $codigo não cadastrado'
+          : _adicionar(produto).$2;
+      HapticFeedback.selectionClick();
+      _limparLeitura?.cancel();
+      _limparLeitura = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _leitura = null);
+      });
+      setState(() => _leitura = leitura);
+      return;
+    }
   }
 
   Future<void> _buscar() async {
+    if (_camera) _escanear();
     final p = await showModalBottomSheet<Produto>(
       context: context,
       isScrollControlled: true,
@@ -91,7 +138,15 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
       return;
     }
     final messenger = ScaffoldMessenger.of(context);
-    Navigator.pop(context);
+    if (widget.incorporada) {
+      setState(() {
+        _itens.clear();
+        _camera = false;
+        _leitura = null;
+      });
+    } else {
+      Navigator.pop(context);
+    }
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -114,13 +169,30 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
       appBar: AppBar(title: const Text('Venda rápida')),
       body: Column(
         children: [
+          if (_camera && widget.ativa)
+            Flexible(
+              child: SizedBox(
+                height: 180,
+                width: double.infinity,
+                child: MobileScanner(
+                  onDetect: _detectar,
+                  errorBuilder: (context, erro, child) => const Center(
+                    child: Text('Câmera indisponível. Use Buscar.'),
+                  ),
+                ),
+              ),
+            ),
+          if (_leitura != null)
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Semantics(liveRegion: true, child: Text(_leitura!)),
+            ),
           Expanded(
             child: _itens.isEmpty
                 ? const EstadoVazio(
                     icone: Icons.point_of_sale,
                     titulo: 'Nenhum item na venda',
-                    texto:
-                        'Escaneie os códigos de barras ou busque os produtos. O estoque só baixa quando você finalizar.',
+                    texto: 'Escaneie os códigos de barras ou busque os produtos. O estoque só baixa quando você finalizar.',
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
@@ -144,19 +216,26 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                                   Text(
                                     item.produto.nome,
                                     style: t.bodyLarge?.copyWith(
-                                        fontWeight: FontWeight.w700),
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
+                                  if (item.produto.validade case final data?)
+                                    Text(
+                                      'Primeiro lote: ${formatarData(data)}',
+                                      style: t.bodySmall,
+                                    ),
                                   const SizedBox(height: 2),
                                   Text(
                                     '${formatarPreco(item.produto.preco)} cada',
-                                    style: t.bodySmall
-                                        ?.copyWith(color: AppCores.cinza),
+                                    style: t.bodySmall?.copyWith(
+                                      color: AppCores.cinza,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             IconButton.outlined(
-                              tooltip: 'Tirar um',
+                              tooltip: 'Tirar uma unidade de ',
                               icon: const Icon(Icons.remove),
                               onPressed: () => _alterar(item, -1),
                             ),
@@ -165,12 +244,13 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                               child: Text(
                                 '${item.quantidade}',
                                 textAlign: TextAlign.center,
-                                style: t.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w800),
+                                style: t.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                             IconButton.outlined(
-                              tooltip: 'Adicionar um',
+                              tooltip: 'Adicionar uma unidade de ',
                               icon: const Icon(Icons.add),
                               onPressed: () => _alterar(item, 1),
                             ),
@@ -202,8 +282,9 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                         Text('Total  ', style: t.bodyMedium),
                         Text(
                           formatarPreco(_total),
-                          style: t.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                          style: t.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
@@ -214,7 +295,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                           child: OutlinedButton.icon(
                             onPressed: _escanear,
                             icon: const Icon(Icons.qr_code_scanner),
-                            label: const Text('Escanear'),
+                            label: Text(_camera ? 'Fechar câmera' : 'Escanear'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -257,14 +338,20 @@ class _SeletorProdutoState extends State<_SeletorProduto> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final b = _busca.trim().toLowerCase();
-    final lista = estoque.produtos
-        .where((p) =>
-            p.quantidade > 0 &&
-            (b.isEmpty ||
-                p.nome.toLowerCase().contains(b) ||
-                p.categoria.toLowerCase().contains(b)))
-        .toList()
-      ..sort((a, c) => a.nome.toLowerCase().compareTo(c.nome.toLowerCase()));
+    final lista =
+        estoque.produtos
+            .where(
+              (p) =>
+                  p.quantidade > 0 &&
+                  (b.isEmpty ||
+                      p.nome.toLowerCase().contains(b) ||
+                      p.categoria.toLowerCase().contains(b) ||
+                      (p.codigoBarras ?? '').contains(b)),
+            )
+            .toList()
+          ..sort(
+            (a, c) => a.nome.toLowerCase().compareTo(c.nome.toLowerCase()),
+          );
     final teclado = MediaQuery.of(context).viewInsets.bottom;
 
     return Padding(
@@ -279,7 +366,7 @@ class _SeletorProdutoState extends State<_SeletorProduto> {
                 autofocus: true,
                 onChanged: (v) => setState(() => _busca = v),
                 decoration: const InputDecoration(
-                  hintText: 'Buscar produto',
+                  hintText: 'Nome ou código de barras',
                   prefixIcon: Icon(Icons.search),
                 ),
               ),
@@ -306,8 +393,9 @@ class _SeletorProdutoState extends State<_SeletorProduto> {
                           ),
                           trailing: Text(
                             formatarPreco(p.preco),
-                            style: t.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w800),
+                            style: t.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           onTap: () => Navigator.pop(context, p),
                         );

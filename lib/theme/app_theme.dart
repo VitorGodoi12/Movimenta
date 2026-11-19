@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 class AppCores {
   AppCores._();
 
+  static const roxoForte = Color(0xFF6242A7);
   static const roxo = Color(0xFFB69CF2);
   static const roxoSuave = Color(0xFFEEE8FC);
   static const roxoCampo = Color(0xFFF6F3FD);
@@ -26,21 +27,22 @@ class AppTheme {
   static ThemeData claro() {
     final base = ThemeData(useMaterial3: true, brightness: Brightness.light);
 
-    final esquema = ColorScheme.fromSeed(
-      seedColor: AppCores.roxo,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppCores.roxo,
-      onPrimary: AppCores.preto,
-      secondary: AppCores.roxo,
-      onSecondary: AppCores.preto,
-      primaryContainer: AppCores.roxoSuave,
-      onPrimaryContainer: AppCores.preto,
-      surface: AppCores.branco,
-      onSurface: AppCores.preto,
-      outline: AppCores.linha,
-      error: AppCores.zerado,
-    );
+    final esquema =
+        ColorScheme.fromSeed(
+          seedColor: AppCores.roxo,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppCores.roxo,
+          onPrimary: AppCores.preto,
+          secondary: AppCores.roxo,
+          onSecondary: AppCores.preto,
+          primaryContainer: AppCores.roxoSuave,
+          onPrimaryContainer: AppCores.preto,
+          surface: AppCores.branco,
+          onSurface: AppCores.preto,
+          outline: AppCores.linha,
+          error: AppCores.zerado,
+        );
 
     final texto = base.textTheme.apply(
       bodyColor: AppCores.preto,
@@ -74,8 +76,8 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppCores.roxo,
-          foregroundColor: AppCores.preto,
+          backgroundColor: AppCores.roxoForte,
+          foregroundColor: AppCores.branco,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(borderRadius: raio14),
           textStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -99,8 +101,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppCores.roxoCampo,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         labelStyle: const TextStyle(color: AppCores.cinza),
         floatingLabelStyle: const TextStyle(
           color: AppCores.preto,
@@ -161,8 +165,9 @@ class AppTheme {
         backgroundColor: AppCores.roxo,
         foregroundColor: AppCores.preto,
         elevation: 2,
-        extendedTextStyle:
-            texto.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        extendedTextStyle: texto.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       snackBarTheme: SnackBarThemeData(

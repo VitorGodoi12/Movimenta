@@ -1,10 +1,27 @@
 class ItemImportado {
-  const ItemImportado(this.nome, this.categoria, this.quantidade, this.unidade);
+  const ItemImportado(
+    this.nome,
+    this.categoria,
+    this.quantidade,
+    this.unidade, {
+    this.unidadesPorEmbalagem,
+  });
 
   final String nome;
   final String categoria;
   final int quantidade;
   final String unidade;
+  final int? unidadesPorEmbalagem;
+
+  bool get emEmbalagem => unidade == 'cx' || unidade == 'fardo';
+
+  ItemImportado comFator(int fator) => ItemImportado(
+    nome,
+    categoria,
+    quantidade,
+    unidade,
+    unidadesPorEmbalagem: fator,
+  );
 
   String get chave => chaveProdutoImportado(nome, unidade, categoria);
 }

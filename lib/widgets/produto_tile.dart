@@ -7,12 +7,7 @@ import 'package:stokio/widgets/nivel_estoque.dart';
 import 'package:stokio/widgets/selo_situacao.dart';
 
 class ProdutoTile extends StatelessWidget {
-  const ProdutoTile({
-    super.key,
-    required this.produto,
-    this.onTap,
-    this.acao,
-  });
+  const ProdutoTile({super.key, required this.produto, this.onTap, this.acao});
 
   final Produto produto;
   final VoidCallback? onTap;
@@ -27,10 +22,20 @@ class ProdutoTile extends StatelessWidget {
         ? produto.situacaoValidade(perfil.diasAvisoValidade)
         : SituacaoValidade.ok;
     final local = (produto.local ?? '').trim();
-    final detalhe =
-        local.isEmpty ? produto.categoria : '${produto.categoria}, $local';
-    final inicial =
-        produto.nome.trim().isEmpty ? '?' : produto.nome.trim()[0].toUpperCase();
+    final detalhe = [
+      if (local.isNotEmpty) local,
+      if (produto.unidadesPorCaixa > 0)
+        'Caixa: ${produto.unidadesPorCaixa} ${produto.unidade}',
+      if (produto.unidadesPorFardo > 0)
+        'Fardo: ${produto.unidadesPorFardo} ${produto.unidade}',
+      if (local.isEmpty &&
+          produto.unidadesPorCaixa == 0 &&
+          produto.unidadesPorFardo == 0)
+        produto.categoria,
+    ].join(' · ');
+    final inicial = produto.nome.trim().isEmpty
+        ? '?'
+        : produto.nome.trim()[0].toUpperCase();
 
     return Material(
       color: AppCores.branco,
@@ -60,8 +65,9 @@ class ProdutoTile extends StatelessWidget {
                     ),
                     child: Text(
                       inicial,
-                      style: t.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                      style: t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -71,8 +77,9 @@ class ProdutoTile extends StatelessWidget {
                       children: [
                         Text(
                           produto.nome,
-                          style: t.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: t.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -83,31 +90,33 @@ class ProdutoTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  SeloSituacao(situacao: produto.situacao),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${produto.quantidade} ${produto.unidade}',
+                        style: t.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SeloSituacao(situacao: produto.situacao),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
               NivelEstoque(produto: produto),
               const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${produto.quantidade} ${produto.unidade}',
-                    style: t.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  Text(
-                    'mínimo ${produto.minimo}',
-                    style: t.bodySmall?.copyWith(color: AppCores.cinza),
-                  ),
-                ],
-              ),
+              Text('Mínimo ${produto.minimo}', style: t.bodySmall),
               if (validade != null) ...[
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Icon(Icons.event_outlined,
-                        size: 16, color: AppCores.cinza),
+                    const Icon(
+                      Icons.event_outlined,
+                      size: 16,
+                      color: AppCores.cinza,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
@@ -122,10 +131,7 @@ class ProdutoTile extends StatelessWidget {
                   ],
                 ),
               ],
-              if (acao != null) ...[
-                const SizedBox(height: 6),
-                acao!,
-              ],
+              if (acao != null) ...[const SizedBox(height: 6), acao!],
             ],
           ),
         ),

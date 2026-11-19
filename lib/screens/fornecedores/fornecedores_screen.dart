@@ -33,8 +33,9 @@ class FornecedoresScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: estoque,
       builder: (context, _) {
-        final lista = [...estoque.fornecedores]
-          ..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+        final lista = [
+          ...estoque.fornecedores,
+        ]..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
 
         return Scaffold(
           appBar: AppBar(title: const Text('Fornecedores')),
@@ -47,8 +48,7 @@ class FornecedoresScreen extends StatelessWidget {
               ? const EstadoVazio(
                   icone: Icons.local_shipping_outlined,
                   titulo: 'Nenhum fornecedor ainda',
-                  texto:
-                      'Cadastre quem vende para você. Na lista de compras dá para fazer o pedido pelo WhatsApp.',
+                  texto: 'Cadastre quem vende para você. Na lista de compras dá para fazer o pedido pelo WhatsApp.',
                 )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 96),
@@ -66,8 +66,7 @@ class FornecedoresScreen extends StatelessWidget {
                       ),
                       child: ListTile(
                         onTap: () => _abrirFormulario(context, f),
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(16, 6, 8, 6),
+                        contentPadding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
                         title: Text(
                           f.nome,
                           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -109,8 +108,13 @@ class _FornecedorSheet extends StatefulWidget {
 class _FornecedorSheetState extends State<_FornecedorSheet> {
   final _chave = GlobalKey<FormState>();
   late final _nome = TextEditingController(text: widget.fornecedor?.nome ?? '');
-  late final _telefone =
-      TextEditingController(text: widget.fornecedor?.telefone ?? '');
+  late final _telefone = TextEditingController(
+    text: widget.fornecedor?.telefone ?? '',
+  );
+
+  late final _prazo = TextEditingController(
+    text: (widget.fornecedor?.prazoDias ?? 3).toString(),
+  );
 
   bool get _editando => widget.fornecedor != null;
 
@@ -118,6 +122,7 @@ class _FornecedorSheetState extends State<_FornecedorSheet> {
   void dispose() {
     _nome.dispose();
     _telefone.dispose();
+    _prazo.dispose();
     super.dispose();
   }
 
@@ -126,7 +131,8 @@ class _FornecedorSheetState extends State<_FornecedorSheet> {
     if (_editando) {
       widget.fornecedor!
         ..nome = _nome.text.trim()
-        ..telefone = _telefone.text.trim();
+        ..telefone = _telefone.text.trim()
+        ..prazoDias = int.parse(_prazo.text.trim());
       estoque.salvarFornecedor(widget.fornecedor!);
     } else {
       estoque.adicionarFornecedor(
@@ -134,6 +140,7 @@ class _FornecedorSheetState extends State<_FornecedorSheet> {
           id: estoque.novoId(),
           nome: _nome.text.trim(),
           telefone: _telefone.text.trim(),
+          prazoDias: int.parse(_prazo.text.trim()),
         ),
       );
     }
@@ -171,9 +178,7 @@ class _FornecedorSheetState extends State<_FornecedorSheet> {
             children: [
               Text(
                 _editando ? 'Editar fornecedor' : 'Novo fornecedor',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
+                style: Theme.of(context).textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 16),
@@ -195,13 +200,28 @@ class _FornecedorSheetState extends State<_FornecedorSheet> {
                 ),
               ),
               const SizedBox(height: 20),
+              TextFormField(
+                controller: _prazo,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Prazo de entrega em dias',
+                ),
+                validator: (v) {
+                  final dias = int.tryParse((v ?? '').trim());
+                  return dias == null || dias < 0 || dias > 365
+                      ? 'Informe de 0 a 365 dias.'
+                      : null;
+                },
+              ),
+              const SizedBox(height: 16),
               FilledButton(onPressed: _salvar, child: const Text('Salvar')),
               if (_editando)
                 Center(
                   child: TextButton(
                     onPressed: _excluir,
                     style: TextButton.styleFrom(
-                        foregroundColor: AppCores.zerado),
+                      foregroundColor: AppCores.zerado,
+                    ),
                     child: const Text('Excluir fornecedor'),
                   ),
                 ),

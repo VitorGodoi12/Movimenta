@@ -9,12 +9,14 @@ import 'package:stokio/services/perfil_service.dart';
 import 'package:stokio/widgets/estado_vazio.dart';
 import 'package:stokio/widgets/produto_tile.dart';
 
-enum _Filtro { todos, acabando, zerados, vencendo }
+enum FiltroEstoque { todos, acabando, zerados, vencendo }
 
 enum _Ordem { nome, menorEstoque, validade }
 
 class EstoqueScreen extends StatefulWidget {
-  const EstoqueScreen({super.key});
+  const EstoqueScreen({super.key, this.filtroInicial = FiltroEstoque.todos});
+
+  final FiltroEstoque filtroInicial;
 
   @override
   State<EstoqueScreen> createState() => _EstoqueScreenState();
@@ -22,14 +24,19 @@ class EstoqueScreen extends StatefulWidget {
 
 class _EstoqueScreenState extends State<EstoqueScreen> {
   String _busca = '';
-  _Filtro _filtro = _Filtro.todos;
+  late FiltroEstoque _filtro = widget.filtroInicial;
+  String? _categoria;
+  final _recolhidas = <String>{};
+
+  String _nomeCategoria(Produto produto) =>
+      produto.categoria.trim().isEmpty ? 'Outros' : produto.categoria.trim();
   _Ordem _ordem = _Ordem.nome;
 
-  String _rotuloFiltro(_Filtro f) => switch (f) {
-    _Filtro.todos => 'Todos',
-    _Filtro.acabando => 'Acabando',
-    _Filtro.zerados => 'Zerados',
-    _Filtro.vencendo => 'Vencendo',
+  String _rotuloFiltro(FiltroEstoque f) => switch (f) {
+    FiltroEstoque.todos => 'Todos',
+    FiltroEstoque.acabando => 'Acabando',
+    FiltroEstoque.zerados => 'Zerados',
+    FiltroEstoque.vencendo => 'Vencendo',
   };
 
   String _rotuloOrdem(_Ordem o) => switch (o) {
@@ -46,6 +53,9 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
 
   List<Produto> _filtrar(List<Produto> todos) {
     final b = _busca.trim().toLowerCase();
+    final categoria = todos.any((p) => _nomeCategoria(p) == _categoria)
+        ? _categoria
+        : null;
     final lista = todos.where((p) {
       final okBusca =
           b.isEmpty ||
@@ -54,12 +64,14 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
           (p.codigoBarras ?? '').contains(b) ||
           (p.local ?? '').toLowerCase().contains(b);
       final okFiltro = switch (_filtro) {
-        _Filtro.todos => true,
-        _Filtro.acabando => p.situacao == SituacaoEstoque.baixo,
-        _Filtro.zerados => p.situacao == SituacaoEstoque.zerado,
-        _Filtro.vencendo => _venceLogo(p),
+        FiltroEstoque.todos => true,
+        FiltroEstoque.acabando => p.situacao == SituacaoEstoque.baixo,
+        FiltroEstoque.zerados => p.situacao == SituacaoEstoque.zerado,
+        FiltroEstoque.vencendo => _venceLogo(p),
       };
-      return okBusca && okFiltro;
+      return okBusca &&
+          okFiltro &&
+          (categoria == null || _nomeCategoria(p) == categoria);
     }).toList();
 
     switch (_ordem) {
@@ -109,10 +121,13 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
         final linhas = [
           for (final categoria in categorias) ...<Object>[
             categoria,
-            ...grupos[categoria]!,
+            if (!_recolhidas.contains(categoria) || _busca.isNotEmpty)
+              ...grupos[categoria]!,
           ],
         ];
 
+        final todasCategorias =
+            estoque.produtos.map(_nomeCategoria).toSet().toList()..sort();
         return Scaffold(
           appBar: AppBar(
             title: const Text('Estoque'),
@@ -165,7 +180,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
-                    for (final f in _Filtro.values)
+                    for (final f in FiltroEstoque.values)
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
@@ -178,6 +193,32 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                   ],
                 ),
               ),
+              if (todasCategorias.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 6,
+                  ),
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: todasCategorias.contains(_categoria)
+                        ? _categoria
+                        : '',
+                    items: [
+                      const DropdownMenuItem(
+                        value: '',
+                        child: Text('Todas as categorias'),
+                      ),
+                      for (final categoria in todasCategorias)
+                        DropdownMenuItem(
+                          value: categoria,
+                          child: Text(categoria),
+                        ),
+                    ],
+                    onChanged: (v) =>
+                        setState(() => _categoria = v == '' ? null : v),
+                  ),
+                ),
               Expanded(
                 child: estoque.total == 0
                     ? const EstadoVazio(
@@ -200,9 +241,18 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                           if (linha is String) {
                             return Semantics(
                               header: true,
-                              child: Text(
-                                linha,
-                                style: Theme.of(context).textTheme.titleMedium,
+                              child: ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(linha),
+                                trailing: Icon(
+                                  _recolhidas.contains(linha)
+                                      ? Icons.expand_more
+                                      : Icons.expand_less,
+                                ),
+                                onTap: () => setState(() {
+                                  if (!_recolhidas.remove(linha))
+                                    _recolhidas.add(linha);
+                                }),
                               ),
                             );
                           }

@@ -22,11 +22,13 @@ class ProdutoFormScreen extends StatefulWidget {
 class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   final _chave = GlobalKey<FormState>();
 
-  static String _dinheiro(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
+  static String _dinheiro(double v) =>
+      v.toStringAsFixed(2).replaceAll('.', ',');
 
   late final _nome = TextEditingController(text: widget.produto?.nome ?? '');
-  late final _categoria =
-      TextEditingController(text: widget.produto?.categoria ?? '');
+  late final _categoria = TextEditingController(
+    text: widget.produto?.categoria ?? '',
+  );
   late final _codigo = TextEditingController(
     text: widget.codigoInicial ?? widget.produto?.codigoBarras ?? '',
   );
@@ -34,8 +36,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   late final _minimo = TextEditingController(
     text: widget.produto == null ? '' : '${widget.produto!.minimo}',
   );
-  late final _unidade =
-      TextEditingController(text: widget.produto?.unidade ?? 'un');
+  late final _unidade = TextEditingController(
+    text: widget.produto?.unidade ?? 'un',
+  );
   late final _local = TextEditingController(text: widget.produto?.local ?? '');
   late final _preco = TextEditingController(
     text: widget.produto == null ? '' : _dinheiro(widget.produto!.preco),
@@ -45,6 +48,23 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         ? _dinheiro(widget.produto!.custo)
         : '',
   );
+  late final _caixa = TextEditingController(
+    text: _fator(widget.produto?.unidadesPorCaixa),
+  );
+  late final _fardo = TextEditingController(
+    text: _fator(widget.produto?.unidadesPorFardo),
+  );
+
+  String _fator(int? v) => v == null || v == 0 ? '' : v.toString();
+
+  String? _validarFator(String? v) {
+    if (v == null || v.trim().isEmpty) return null;
+    final tamanho = int.tryParse(v.trim());
+    return tamanho == null || tamanho < 1 || tamanho > 99999
+        ? 'Use um número entre 1 e 99999.'
+        : null;
+  }
+
   late DateTime? _validade = widget.produto?.validade;
   late String? _fornecedorId = widget.produto?.fornecedorId;
 
@@ -59,6 +79,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       _quantidade,
       _minimo,
       _unidade,
+      _caixa,
+      _fardo,
       _local,
       _preco,
       _custo,
@@ -118,6 +140,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         ..categoria = _categoria.text.trim()
         ..minimo = minimo
         ..unidade = _unidade.text.trim()
+        ..unidadesPorCaixa = int.tryParse(_caixa.text.trim()) ?? 0
+        ..unidadesPorFardo = int.tryParse(_fardo.text.trim()) ?? 0
         ..preco = preco
         ..custo = custo
         ..codigoBarras = codigo
@@ -136,6 +160,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
           preco: preco,
           custo: custo,
           unidade: _unidade.text.trim(),
+          unidadesPorCaixa: int.tryParse(_caixa.text.trim()) ?? 0,
+          unidadesPorFardo: int.tryParse(_fardo.text.trim()) ?? 0,
           codigoBarras: codigo,
           validade: _validade,
           local: local,
@@ -154,12 +180,12 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     final decimal = const TextInputType.numberWithOptions(decimal: true);
 
     Widget titulo(String texto) => Padding(
-          padding: const EdgeInsets.only(top: 24, bottom: 12),
-          child: Text(
-            texto,
-            style: t.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-          ),
-        );
+      padding: const EdgeInsets.only(top: 24, bottom: 12),
+      child: Text(
+        texto,
+        style: t.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -221,8 +247,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                       controller: _quantidade,
                       keyboardType: TextInputType.number,
                       inputFormatters: apenasNumeros,
-                      decoration:
-                          const InputDecoration(labelText: 'Quantidade atual'),
+                      decoration: const InputDecoration(
+                        labelText: 'Quantidade atual',
+                      ),
                       validator: _inteiro,
                     ),
                   ),
@@ -233,8 +260,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                     controller: _minimo,
                     keyboardType: TextInputType.number,
                     inputFormatters: apenasNumeros,
-                    decoration:
-                        const InputDecoration(labelText: 'Estoque mínimo'),
+                    decoration: const InputDecoration(
+                      labelText: 'Estoque mínimo',
+                    ),
                     validator: _inteiro,
                   ),
                 ),
@@ -269,11 +297,30 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
               ],
             ),
             const SizedBox(height: 14),
-            CampoData(
-              rotulo: 'Data de validade (opcional)',
-              valor: _validade,
-              aoMudar: (d) => setState(() => _validade = d),
+            TextFormField(
+              controller: _caixa,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Unidades por caixa',
+              ),
+              validator: _validarFator,
             ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _fardo,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Unidades por fardo',
+              ),
+              validator: _validarFator,
+            ),
+            const SizedBox(height: 12),
+            if ((widget.produto?.lotes.length ?? 0) <= 1)
+              CampoData(
+                rotulo: 'Data de validade (opcional)',
+                valor: _validade,
+                aoMudar: (d) => setState(() => _validade = d),
+              ),
             titulo('Preços'),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,8 +354,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
             DropdownButtonFormField<String?>(
               value: _fornecedorId,
               isExpanded: true,
-              decoration:
-                  const InputDecoration(labelText: 'Fornecedor (opcional)'),
+              decoration: const InputDecoration(
+                labelText: 'Fornecedor (opcional)',
+              ),
               items: [
                 const DropdownMenuItem<String?>(
                   value: null,

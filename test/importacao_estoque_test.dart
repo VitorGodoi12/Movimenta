@@ -110,8 +110,16 @@ NAO TEM NADA
       final lista = interpretarListaEstoque(
         '0 X ITAIPAVA 350ML\n1 cx salsicha',
       );
-      await servico.importarContagem(lista.itens);
-      await servico.importarContagem(lista.itens);
+      await servico.importarContagem(
+        lista.itens
+            .map((item) => item.emEmbalagem ? item.comFator(12) : item)
+            .toList(),
+      );
+      await servico.importarContagem(
+        lista.itens
+            .map((item) => item.emEmbalagem ? item.comFator(12) : item)
+            .toList(),
+      );
 
       final recarregado = EstoqueService();
       addTearDown(recarregado.dispose);

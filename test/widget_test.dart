@@ -27,6 +27,12 @@ void main() {
     await tester.tap(find.text('Estoque'));
     await tester.pumpAndSettle();
     expect(find.text('Estoque'), findsWidgets);
+    await tester.tap(find.text('Vender'));
+    await tester.pumpAndSettle();
+    expect(find.text('Finalizar venda'), findsOneWidget);
+    await tester.tap(find.text('Mais'));
+    await tester.pumpAndSettle();
+    expect(find.text('Configurações e backup'), findsOneWidget);
 
     final perfilRecarregado = PerfilService();
     addTearDown(perfilRecarregado.dispose);
@@ -52,9 +58,15 @@ void main() {
     expect(estoque.produtos, isEmpty);
     expect(find.text('Bebidas'), findsOneWidget);
     expect(find.text('Salgados e congelados'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField), '12');
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Importar 2 produtos'));
     await tester.pumpAndSettle();
     expect(estoque.produtos, hasLength(2));
+    expect(
+      estoque.produtos.firstWhere((p) => p.nome == 'salsicha').quantidade,
+      12,
+    );
     expect(find.text('Bebidas'), findsWidgets);
     expect(find.text('Salgados e congelados'), findsWidgets);
   });

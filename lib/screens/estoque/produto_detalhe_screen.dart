@@ -18,6 +18,17 @@ class ProdutoDetalheScreen extends StatelessWidget {
 
   final Produto produto;
 
+  String? _avisoLote(DateTime? data) {
+    if (data == null) return null;
+    final dias = -diasDesde(data);
+    if (dias < 0) return 'Vencido';
+    if (dias == 0) return 'Vence hoje';
+    if (dias <= perfil.diasAvisoValidade) {
+      return dias == 1 ? 'Vence amanhã' : 'Vence em $dias dias';
+    }
+    return null;
+  }
+
   Future<void> _excluir(BuildContext context) async {
     final ok = await confirmar(
       context,
@@ -110,8 +121,10 @@ class ProdutoDetalheScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 6),
-                            child: Text('${produto.unidade} em estoque',
-                                style: t.bodyMedium),
+                            child: Text(
+                              '${produto.unidade} em estoque',
+                              style: t.bodyMedium,
+                            ),
                           ),
                           const Spacer(),
                           SeloSituacao(situacao: produto.situacao),
@@ -133,8 +146,11 @@ class ProdutoDetalheScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () => mostrarMovimentarSheet(context,
-                          produto: produto, tipo: TipoMovimento.entrada),
+                      onPressed: () => mostrarMovimentarSheet(
+                        context,
+                        produto: produto,
+                        tipo: TipoMovimento.entrada,
+                      ),
                       icon: const Icon(Icons.add),
                       label: const Text('Entrada'),
                     ),
@@ -142,8 +158,11 @@ class ProdutoDetalheScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => mostrarMovimentarSheet(context,
-                          produto: produto, tipo: TipoMovimento.saida),
+                      onPressed: () => mostrarMovimentarSheet(
+                        context,
+                        produto: produto,
+                        tipo: TipoMovimento.saida,
+                      ),
                       icon: const Icon(Icons.remove),
                       label: const Text('Saída'),
                     ),
@@ -152,8 +171,11 @@ class ProdutoDetalheScreen extends StatelessWidget {
               ),
               Center(
                 child: TextButton.icon(
-                  onPressed: () => mostrarMovimentarSheet(context,
-                      produto: produto, tipo: TipoMovimento.ajuste),
+                  onPressed: () => mostrarMovimentarSheet(
+                    context,
+                    produto: produto,
+                    tipo: TipoMovimento.ajuste,
+                  ),
                   icon: const Icon(Icons.tune, size: 18),
                   label: const Text('Ajustar contagem'),
                 ),
@@ -201,6 +223,24 @@ class ProdutoDetalheScreen extends StatelessWidget {
                 valor: produto.codigoBarras ?? 'Não informado',
               ),
               const SizedBox(height: 24),
+              if (produto.lotes.isNotEmpty) ...[
+                Text('Lotes em estoque', style: t.titleMedium),
+                for (final MapEntry(key: data, value: saldo)
+                    in produto.lotes.entries)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      data == null
+                          ? 'Sem validade informada'
+                          : formatarData(data),
+                    ),
+                    subtitle: _avisoLote(data) == null
+                        ? null
+                        : Text(_avisoLote(data)!),
+                    trailing: Text('$saldo ${produto.unidade}'),
+                  ),
+                const SizedBox(height: 16),
+              ],
               Text(
                 'Movimentações deste produto',
                 style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
@@ -244,10 +284,7 @@ class _Linha extends StatelessWidget {
           Text(rotulo, style: t.bodyMedium?.copyWith(color: AppCores.cinza)),
           const SizedBox(width: 16),
           const Spacer(),
-          if (complemento != null) ...[
-            complemento!,
-            const SizedBox(width: 8),
-          ],
+          if (complemento != null) ...[complemento!, const SizedBox(width: 8)],
           Flexible(
             child: Text(
               valor,

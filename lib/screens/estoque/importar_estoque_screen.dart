@@ -13,6 +13,12 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
   final _texto = TextEditingController();
   ListaImportada? _previa;
   bool _salvando = false;
+  final _fatores = <String, int>{};
+
+  ItemImportado _comFator(ItemImportado item) {
+    final fator = _fatores[item.chave];
+    return fator == null ? item : item.comFator(fator);
+  }
 
   @override
   void dispose() {
@@ -24,7 +30,7 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
     if (_salvando) return;
     setState(() => _salvando = true);
     try {
-      await estoque.importarContagem(previa.itens);
+      await estoque.importarContagem(previa.itens.map(_comFator).toList());
       if (mounted) Navigator.pop(context, previa.itens.length);
     } on StateError catch (erro) {
       if (!mounted) return;
@@ -43,6 +49,14 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
       (grupos[item.categoria] ??= []).add(item);
     }
     final categorias = grupos.keys.toList()..sort();
+    final semConversao =
+        previa?.itens
+            .where((item) => estoque.fatorImportacao(item) == 0)
+            .toList() ??
+        const <ItemImportado>[];
+    final faltaConversao = semConversao.any(
+      (item) => !_fatores.containsKey(item.chave),
+    );
 
     return PopScope(
       canPop: !_salvando,
@@ -78,7 +92,7 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
                 '${previa.itens.length} produtos em ${categorias.length} categorias',
               ),
               const Text(
-                'As quantidades da lista substituem a contagem dos produtos correspondentes.',
+                'A lista substitui a contagem dos produtos correspondentes. As embalagens novas são convertidas em unidades.',
               ),
               TextButton(
                 onPressed: _salvando
@@ -86,6 +100,37 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
                     : () => setState(() => _previa = null),
                 child: const Text('Editar texto da lista'),
               ),
+              if (semConversao.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Quantas unidades vêm em cada embalagem?',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                for (final item in semConversao)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: TextFormField(
+                      key: ValueKey(item.chave),
+                      initialValue: _fatores[item.chave]?.toString(),
+                      enabled: !_salvando,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText:
+                            '${item.nome} · unidades por ${item.unidade == 'cx' ? 'caixa' : 'fardo'}',
+                        helperText:
+                            '${item.quantidade} ${item.unidade} na lista',
+                      ),
+                      onChanged: (texto) => setState(() {
+                        final fator = int.tryParse(texto.trim());
+                        if (fator == null || fator < 1 || fator > 99999) {
+                          _fatores.remove(item.chave);
+                        } else {
+                          _fatores[item.chave] = fator;
+                        }
+                      }),
+                    ),
+                  ),
+              ],
               if (previa.repetidos.isNotEmpty)
                 ExpansionTile(
                   title: Text(
@@ -127,7 +172,7 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
             : SafeArea(
                 minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                 child: FilledButton(
-                  onPressed: _salvando || previa.itens.isEmpty
+                  onPressed: _salvando || faltaConversao || previa.itens.isEmpty
                       ? null
                       : () => _importar(previa),
                   child: Text(

@@ -52,20 +52,21 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
   late String? _motivo =
       widget.motivoInicial ?? _motivoPadrao(widget.tipoInicial);
   DateTime? _validade;
+  String _embalagem = 'un';
   final _quantidade = TextEditingController();
   String? _erro;
 
   String? _motivoPadrao(TipoMovimento t) => switch (t) {
-        TipoMovimento.entrada => Motivos.compra,
-        TipoMovimento.saida => Motivos.venda,
-        _ => null,
-      };
+    TipoMovimento.entrada => Motivos.compra,
+    TipoMovimento.saida => Motivos.venda,
+    _ => null,
+  };
 
   List<String> get _motivos => switch (_tipo) {
-        TipoMovimento.entrada => Motivos.entrada,
-        TipoMovimento.saida => Motivos.saida,
-        _ => const <String>[],
-      };
+    TipoMovimento.entrada => Motivos.entrada,
+    TipoMovimento.saida => Motivos.saida,
+    _ => const <String>[],
+  };
 
   @override
   void dispose() {
@@ -80,6 +81,7 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
     setState(() {
       if (p != null) {
         _produto = p;
+        _embalagem = 'un';
         _erro = null;
       } else {
         _erro = 'O código $codigo não está cadastrado.';
@@ -89,7 +91,11 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
 
   void _confirmar() {
     final p = _produto;
-    final qtd = int.tryParse(_quantidade.text.trim());
+    final digitada = int.tryParse(_quantidade.text.trim());
+    final fator = _tipo == TipoMovimento.entrada && _embalagem != 'un'
+        ? (_produto?.fatorEmbalagem(_embalagem) ?? 0)
+        : 1;
+    final qtd = digitada == null || fator <= 0 ? null : digitada * fator;
     final ajuste = _tipo == TipoMovimento.ajuste;
 
     if (p == null) {
@@ -97,14 +103,15 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
       return;
     }
     if (qtd == null || (!ajuste && qtd <= 0)) {
-      setState(() => _erro = ajuste
-          ? 'Digite a quantidade contada.'
-          : 'Digite uma quantidade maior que zero.');
+      setState(
+        () => _erro = ajuste
+            ? 'Digite a quantidade contada.'
+            : 'Digite uma quantidade maior que zero.',
+      );
       return;
     }
     if (_tipo == TipoMovimento.saida && qtd > p.quantidade) {
-      setState(
-          () => _erro = 'Só há ${p.quantidade} ${p.unidade} em estoque.');
+      setState(() => _erro = 'Só há ${p.quantidade} ${p.unidade} em estoque.');
       return;
     }
 
@@ -123,7 +130,8 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
               'Entrada registrada: +$qtd ${p.unidade} de ${p.nome}.',
             TipoMovimento.saida =>
               'Saída registrada: -${-mov.delta} ${p.unidade} de ${p.nome}.',
-            _ => 'Contagem ajustada: ${p.nome} agora tem ${p.quantidade} ${p.unidade}.',
+            _ =>
+              'Contagem ajustada: ${p.nome} agora tem ${p.quantidade} ${p.unidade}.',
           };
 
     final messenger = ScaffoldMessenger.of(context);
@@ -174,15 +182,22 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
                 showSelectedIcon: false,
                 segments: const [
                   ButtonSegment(
-                      value: TipoMovimento.entrada, label: Text('Entrada')),
+                    value: TipoMovimento.entrada,
+                    label: Text('Entrada'),
+                  ),
                   ButtonSegment(
-                      value: TipoMovimento.saida, label: Text('Saída')),
+                    value: TipoMovimento.saida,
+                    label: Text('Saída'),
+                  ),
                   ButtonSegment(
-                      value: TipoMovimento.ajuste, label: Text('Ajuste')),
+                    value: TipoMovimento.ajuste,
+                    label: Text('Ajuste'),
+                  ),
                 ],
                 selected: {_tipo},
                 onSelectionChanged: (s) => setState(() {
                   _tipo = s.first;
+                  _embalagem = 'un';
                   _motivo = _motivoPadrao(_tipo);
                   _erro = null;
                 }),
@@ -206,12 +221,15 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
                         for (final p in estoque.produtos)
                           DropdownMenuItem(
                             value: p,
-                            child:
-                                Text(p.nome, overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              p.nome,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                       ],
                       onChanged: (p) => setState(() {
                         _produto = p;
+                        _embalagem = 'un';
                         _erro = null;
                       }),
                     ),
@@ -237,6 +255,36 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
               ),
             ],
             const SizedBox(height: 16),
+            if (_tipo == TipoMovimento.entrada &&
+                _produto != null &&
+                !_produto!.estoqueEmEmbalagem &&
+                (_produto!.unidadesPorCaixa > 0 ||
+                    _produto!.unidadesPorFardo > 0))
+              DropdownButtonFormField<String>(
+                key: ValueKey(_produto!.id),
+                initialValue: _embalagem,
+                decoration: const InputDecoration(
+                  labelText: 'Embalagem da entrada',
+                ),
+                items: [
+                  const DropdownMenuItem(value: 'un', child: Text('Unidade')),
+                  if (_produto!.unidadesPorCaixa > 0)
+                    DropdownMenuItem(
+                      value: 'cx',
+                      child: Text(
+                        'Caixa · ${_produto!.unidadesPorCaixa} unidades',
+                      ),
+                    ),
+                  if (_produto!.unidadesPorFardo > 0)
+                    DropdownMenuItem(
+                      value: 'fardo',
+                      child: Text(
+                        'Fardo · ${_produto!.unidadesPorFardo} unidades',
+                      ),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _embalagem = v ?? 'un'),
+              ),
             TextField(
               controller: _quantidade,
               keyboardType: TextInputType.number,
@@ -247,14 +295,16 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
                     ? 'Quantas unidades existem agora. O sistema corrige a diferença.'
                     : null,
                 helperMaxLines: 2,
-                suffixText: _produto?.unidade,
+                suffixText: _embalagem == 'un' ? _produto?.unidade : _embalagem,
               ),
               onChanged: (_) => setState(() => _erro = null),
             ),
             if (_motivos.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Text('Motivo',
-                  style: t.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+              Text(
+                'Motivo',
+                style: t.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
