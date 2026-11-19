@@ -12,7 +12,7 @@ class ProdutoFormScreen extends StatefulWidget {
 
   final Produto? produto;
 
-  /// Código já lido pelo scanner, para um produto novo.
+  /// Código lido pelo scanner para preencher o formulário.
   final String? codigoInicial;
 
   @override
@@ -26,7 +26,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   late final _categoria =
       TextEditingController(text: widget.produto?.categoria ?? '');
   late final _codigo = TextEditingController(
-    text: widget.produto?.codigoBarras ?? widget.codigoInicial ?? '',
+    text: widget.codigoInicial ?? widget.produto?.codigoBarras ?? '',
   );
   late final _quantidade = TextEditingController();
   late final _minimo = TextEditingController(

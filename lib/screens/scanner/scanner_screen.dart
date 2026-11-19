@@ -22,10 +22,10 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
-  final _controller =
-      MobileScannerController(detectionSpeed: DetectionSpeed.noDuplicates);
+  final _controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+  );
   bool _lido = false;
-  bool _lanterna = false;
 
   @override
   void dispose() {
@@ -34,9 +34,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   void _aoDetectar(BarcodeCapture captura) {
-    if (_lido) return;
+    if (_lido || ModalRoute.of(context)?.isCurrent != true) return;
     for (final b in captura.barcodes) {
-      final valor = b.rawValue;
+      final valor = b.rawValue?.trim();
       if (valor != null && valor.isNotEmpty) {
         _lido = true;
         HapticFeedback.mediumImpact();
@@ -57,11 +57,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
   }
 
-  Future<void> _alternarLanterna() async {
-    await _controller.toggleTorch();
-    if (mounted) setState(() => _lanterna = !_lanterna);
-  }
-
   @override
   Widget build(BuildContext context) {
     final estiloBotao = IconButton.styleFrom(
@@ -71,73 +66,106 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     return Scaffold(
       backgroundColor: AppCores.preto,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          MobileScanner(controller: _controller, onDetect: _aoDetectar),
-          IgnorePointer(
-            child: Center(
-              child: Container(
-                width: 290,
-                height: 190,
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppCores.roxo, width: 3),
-                  borderRadius: BorderRadius.circular(24),
+      body: LayoutBuilder(
+        builder: (context, limites) {
+          final area = Rect.fromCenter(
+            center: limites.biggest.center(Offset.zero),
+            width: (limites.maxWidth * 0.82).clamp(0.0, 290.0).toDouble(),
+            height: (limites.maxHeight * 0.4).clamp(0.0, 190.0).toDouble(),
+          );
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              MobileScanner(
+                controller: _controller,
+                scanWindow: area,
+                onDetect: _aoDetectar,
+                errorBuilder: (context, erro, child) => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Câmera indisponível. Confira a permissão ou digite o código.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppCores.branco),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
+              IgnorePointer(
+                child: Center(
+                  child: Container(
+                    width: area.width,
+                    height: area.height,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppCores.roxo, width: 3),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      IconButton.filled(
-                        tooltip: 'Fechar',
-                        style: estiloBotao,
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
+                      Row(
+                        children: [
+                          IconButton.filled(
+                            tooltip: 'Fechar',
+                            style: estiloBotao,
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const Spacer(),
+                          ValueListenableBuilder<MobileScannerState>(
+                            valueListenable: _controller,
+                            builder: (context, estado, _) => IconButton.filled(
+                              tooltip: 'Lanterna',
+                              style: estiloBotao,
+                              icon: Icon(
+                                estado.torchState == TorchState.on
+                                    ? Icons.flash_on
+                                    : Icons.flash_off,
+                              ),
+                              onPressed:
+                                  estado.torchState == TorchState.unavailable
+                                  ? null
+                                  : _controller.toggleTorch,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton.filled(
+                            tooltip: 'Trocar câmera',
+                            style: estiloBotao,
+                            icon: const Icon(Icons.cameraswitch_outlined),
+                            onPressed: () => _controller.switchCamera(),
+                          ),
+                        ],
                       ),
                       const Spacer(),
-                      IconButton.filled(
-                        tooltip: 'Lanterna',
-                        style: estiloBotao,
-                        icon: Icon(_lanterna ? Icons.flash_on : Icons.flash_off),
-                        onPressed: _alternarLanterna,
+                      const Text(
+                        'Aponte para o código de barras',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppCores.branco,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        tooltip: 'Trocar câmera',
-                        style: estiloBotao,
-                        icon: const Icon(Icons.cameraswitch_outlined),
-                        onPressed: () => _controller.switchCamera(),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: _digitar,
+                        icon: const Icon(Icons.keyboard_outlined),
+                        label: const Text('Digitar o código'),
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  const Text(
-                    'Aponte para o código de barras',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppCores.branco,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: _digitar,
-                    icon: const Icon(Icons.keyboard_outlined),
-                    label: const Text('Digitar o código'),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
