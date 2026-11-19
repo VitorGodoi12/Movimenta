@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Paleta do Movimenta: roxo claro, branco e preto.
 /// Amarelo e vermelho aparecem só para sinalizar estoque baixo/zerado.
@@ -42,7 +41,7 @@ class AppTheme {
       error: AppCores.zerado,
     );
 
-    final texto = GoogleFonts.plusJakartaSansTextTheme(base.textTheme).apply(
+    final texto = base.textTheme.apply(
       bodyColor: AppCores.preto,
       displayColor: AppCores.preto,
     );
