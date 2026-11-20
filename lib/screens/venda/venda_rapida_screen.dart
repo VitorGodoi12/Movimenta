@@ -178,6 +178,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                 width: double.infinity,
                 child: MobileScanner(
                   key: ValueKey(_sessaoCamera),
+                  fit: BoxFit.contain,
                   tapToFocus: true,
                   onDetect: _detectar,
                   errorBuilder: (context, erro) => avisoCameraLeitor(

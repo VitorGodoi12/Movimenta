@@ -83,6 +83,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             children: [
               MobileScanner(
                 controller: _controller,
+                fit: BoxFit.contain,
                 tapToFocus: true,
                 onDetect: _aoDetectar,
                 errorBuilder: (context, erro) => avisoCameraLeitor(
@@ -143,13 +144,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         ],
                       ),
                       const Spacer(),
-                      const Text(
-                        'Aponte para o código de barras. Toque na câmera para focar.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppCores.branco,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Colors.black87,
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(10),
+                          child: Text(
+                            'Aponte para o código de barras. Toque na câmera para focar.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppCores.branco,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
