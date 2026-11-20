@@ -236,7 +236,7 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Stokio 1.2.0',
+            'Stokio 1.2.1',
             style: t.bodySmall?.copyWith(color: AppCores.cinza),
           ),
         ],

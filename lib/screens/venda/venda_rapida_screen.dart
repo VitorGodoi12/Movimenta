@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:stokio/models/produto.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:stokio/screens/scanner/scanner_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/theme/app_theme.dart';
@@ -36,6 +37,7 @@ class VendaRapidaScreen extends StatefulWidget {
 class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
   final List<_ItemCarrinho> _itens = [];
   bool _camera = false;
+  int _sessaoCamera = 0;
   String? _ultimoCodigo;
   String? _leitura;
   Timer? _limparLeitura;
@@ -175,9 +177,12 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                 height: 180,
                 width: double.infinity,
                 child: MobileScanner(
+                  key: ValueKey(_sessaoCamera),
+                  tapToFocus: true,
                   onDetect: _detectar,
-                  errorBuilder: (context, erro, child) => const Center(
-                    child: Text('Câmera indisponível. Use Buscar.'),
+                  errorBuilder: (context, erro) => avisoCameraLeitor(
+                    erro,
+                    tentarNovamente: () => setState(() => _sessaoCamera++),
                   ),
                 ),
               ),

@@ -14,31 +14,8 @@ Future<String?> lerCodigo(BuildContext context) {
   );
 }
 
-/// Modo contínuo: a câmera continua aberta e cada leitura chama [aoLer].
-/// O texto devolvido por [aoLer] aparece na tela como confirmação.
-Future<void> lerEmSequencia(
-  BuildContext context, {
-  required String? Function(String codigo) aoLer,
-  String dica = 'Escaneie os produtos',
-}) {
-  return Navigator.push<void>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ScannerScreen(aoLer: aoLer, dica: dica),
-      fullscreenDialog: true,
-    ),
-  );
-}
-
 class ScannerScreen extends StatefulWidget {
-  const ScannerScreen({
-    super.key,
-    this.aoLer,
-    this.dica = 'Aponte para o código de barras',
-  });
-
-  final String? Function(String codigo)? aoLer;
-  final String dica;
+  const ScannerScreen({super.key});
 
   @override
   State<ScannerScreen> createState() => _ScannerScreenState();
@@ -46,12 +23,10 @@ class ScannerScreen extends StatefulWidget {
 
 class _ScannerScreenState extends State<ScannerScreen> {
   final _controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
+    detectionSpeed: DetectionSpeed.normal,
+    autoZoom: true,
   );
   bool _lido = false;
-  String? _feedback;
-
-  bool get _continuo => widget.aoLer != null;
 
   @override
   void dispose() {
@@ -60,19 +35,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   void _processar(String codigo) {
-    if (_continuo) {
-      HapticFeedback.mediumImpact();
-      setState(() => _feedback = widget.aoLer!(codigo));
-    } else {
-      if (_lido) return;
-      _lido = true;
-      HapticFeedback.mediumImpact();
-      Navigator.pop(context, codigo);
-    }
+    if (!mounted || _lido) return;
+    _lido = true;
+    HapticFeedback.mediumImpact();
+    Navigator.pop(context, codigo);
   }
 
   void _aoDetectar(BarcodeCapture captura) {
-    if (_lido || ModalRoute.of(context)?.isCurrent != true) return;
+    if (!mounted || _lido || ModalRoute.of(context)?.isCurrent != true) return;
     for (final b in captura.barcodes) {
       final valor = b.rawValue?.trim();
       if (valor != null && valor.isNotEmpty) {
@@ -113,17 +83,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
             children: [
               MobileScanner(
                 controller: _controller,
-                scanWindow: area,
+                tapToFocus: true,
                 onDetect: _aoDetectar,
-                errorBuilder: (context, erro, child) => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      'Câmera indisponível. Confira a permissão ou digite o código.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppCores.branco),
-                    ),
-                  ),
+                errorBuilder: (context, erro) => avisoCameraLeitor(
+                  erro,
+                  tentarNovamente: () => _controller.start(),
                 ),
               ),
               IgnorePointer(
@@ -179,20 +143,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         ],
                       ),
                       const Spacer(),
-                      if (_feedback != null)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: AppCores.roxo,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(_feedback!, textAlign: TextAlign.center),
-                        ),
-                      Text(
-                        widget.dica,
+                      const Text(
+                        'Aponte para o código de barras. Toque na câmera para focar.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppCores.branco,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -204,14 +158,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         icon: const Icon(Icons.keyboard_outlined),
                         label: const Text('Digitar o código'),
                       ),
-                      if (_continuo)
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppCores.branco,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Concluir leitura'),
-                        ),
                     ],
                   ),
                 ),
@@ -262,4 +208,38 @@ class _DigitarCodigoDialogState extends State<_DigitarCodigoDialog> {
       ],
     );
   }
+}
+
+Widget avisoCameraLeitor(
+  MobileScannerException erro, {
+  required VoidCallback tentarNovamente,
+}) {
+  final mensagem = switch (erro.errorCode) {
+    MobileScannerErrorCode.permissionDenied =>
+      'Permita o acesso à câmera nas configurações do aparelho.',
+    MobileScannerErrorCode.unsupported =>
+      'Este aparelho não disponibilizou uma câmera para leitura.',
+    _ => 'Não foi possível iniciar a câmera.',
+  };
+
+  return Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            mensagem,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white),
+          ),
+          TextButton(
+            onPressed: tentarNovamente,
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+            child: const Text('Tentar novamente'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
