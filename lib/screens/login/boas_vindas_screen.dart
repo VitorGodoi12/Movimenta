@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stokio/screens/login/loja_screen.dart';
 import 'package:stokio/models/cliente.dart';
 import 'package:stokio/screens/shell_screen.dart';
 import 'package:stokio/services/perfil_service.dart';
@@ -61,8 +62,9 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
               padding: EdgeInsets.fromLTRB(24, topo + 24, 24, 24),
               decoration: const BoxDecoration(
                 color: AppCores.roxo,
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(32)),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(32),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,8 +73,10 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
                   const SizedBox(height: 28),
                   Text(
                     'Seu estoque,\nsempre em dia.',
-                    style: t.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.w800, height: 1.1),
+                    style: t.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -96,8 +100,9 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
                       children: [
                         Text(
                           'Vamos configurar o básico',
-                          style: t.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                          style: t.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -108,8 +113,9 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
                         TextFormField(
                           controller: _nome,
                           textCapitalization: TextCapitalization.words,
-                          decoration:
-                              const InputDecoration(labelText: 'Seu nome'),
+                          decoration: const InputDecoration(
+                            labelText: 'Seu nome',
+                          ),
                           validator: _obrigatorio,
                         ),
                         const SizedBox(height: 14),
@@ -117,7 +123,8 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
                           controller: _estabelecimento,
                           textCapitalization: TextCapitalization.words,
                           decoration: const InputDecoration(
-                              labelText: 'Nome do estabelecimento'),
+                            labelText: 'Nome do estabelecimento',
+                          ),
                           validator: _obrigatorio,
                         ),
                         const SizedBox(height: 14),
@@ -125,12 +132,24 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           decoration: const InputDecoration(
-                              labelText: 'E-mail (opcional)'),
+                            labelText: 'E-mail (opcional)',
+                          ),
                         ),
                         const SizedBox(height: 24),
                         FilledButton(
                           onPressed: _comecar,
                           child: const Text('Começar a usar'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.push<void>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LojaScreen(),
+                            ),
+                          ),
+                          child: const Text(
+                            'Entrar ou cadastrar loja compartilhada',
+                          ),
                         ),
                       ],
                     ),

@@ -46,3 +46,8 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Banco e arquivos gerados pelo servidor
+/dados/
+/servidor/dados/
+/servidor/__pycache__/

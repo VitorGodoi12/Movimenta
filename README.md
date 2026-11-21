@@ -40,6 +40,10 @@ A atualização do aplicativo Android conserva os dados locais. Backups anterior
 - A reposição considera as vendas dos últimos 30 dias, o saldo, o prazo de cada fornecedor e sete dias de reserva. Revise a mensagem antes de abrir o WhatsApp.
 - O lembrete semanal de backup aparece no Início. Em **Mais → Configurações e backup**, teste um backup sem substituir os dados do aparelho.
 
+## Loja compartilhada
+
+Acesse **Loja compartilhada** na tela inicial ou em **Mais**. O modo conectado tem contas de dono e funcionário, aprovação de equipe, corredores, estoque por categoria e catálogo por GTIN. A configuração do banco e do envio de e-mails está no [guia do servidor](servidor/README.md).
+
 ## Compilar e testar
 
 ```sh

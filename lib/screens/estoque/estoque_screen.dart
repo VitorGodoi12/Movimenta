@@ -5,6 +5,7 @@ import 'package:stokio/screens/estoque/produto_detalhe_screen.dart';
 import 'package:stokio/screens/estoque/produto_form_screen.dart';
 import 'package:stokio/screens/scanner/fluxo_scanner.dart';
 import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/categorias_mercado.dart';
 import 'package:stokio/services/perfil_service.dart';
 import 'package:stokio/widgets/estado_vazio.dart';
 import 'package:stokio/widgets/produto_tile.dart';
@@ -29,7 +30,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
   final _recolhidas = <String>{};
 
   String _nomeCategoria(Produto produto) =>
-      produto.categoria.trim().isEmpty ? 'Outros' : produto.categoria.trim();
+      categoriaExibida(produto.nome, produto.categoria);
   _Ordem _ordem = _Ordem.nome;
 
   String _rotuloFiltro(FiltroEstoque f) => switch (f) {
@@ -111,7 +112,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
         final lista = _filtrar(estoque.produtos);
         final grupos = <String, List<Produto>>{};
         for (final produto in lista) {
-          final categoria = produto.categoria.trim();
+          final categoria = _nomeCategoria(produto);
           (grupos[categoria.isEmpty ? 'Outros' : categoria] ??= []).add(
             produto,
           );

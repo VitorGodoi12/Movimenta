@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:stokio/screens/login/loja_screen.dart';
 import 'package:stokio/screens/alertas/alertas_screen.dart';
 import 'package:stokio/screens/alertas/lista_compras_screen.dart';
 import 'package:stokio/screens/configuracoes/configuracoes_screen.dart';
@@ -78,6 +79,7 @@ class _MaisScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final destinos = <(IconData, String, Widget)>[
+      (Icons.storefront_outlined, 'Loja compartilhada', const LojaScreen()),
       (
         Icons.notifications_outlined,
         'Alertas de estoque e validade',

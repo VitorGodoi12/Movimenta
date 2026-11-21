@@ -67,7 +67,7 @@ void main() {
       estoque.produtos.firstWhere((p) => p.nome == 'salsicha').quantidade,
       12,
     );
-    expect(find.text('Bebidas'), findsWidgets);
+    expect(find.text('Cervejas'), findsWidgets);
     expect(find.text('Salgados e congelados'), findsWidgets);
   });
 }
