@@ -11,6 +11,18 @@ O servidor ouve por padrão em `127.0.0.1:8765`. Configure `STOKIO_DATA` para gu
 
 Para uso entre celulares, publique a API atrás de um proxy HTTPS e informe essa URL em Loja compartilhada no app. Se quiser distribuir o APK com o endereço preenchido, compile com `--dart-define=STOKIO_API_URL=https://estoque.exemplo.com`. Para testar pelo emulador Android, use um build de depuração e informe `http://10.0.2.2:8765`. No Flutter Web, configure `STOKIO_WEB_ORIGINS` com as origens autorizadas, separadas por vírgula.
 
+## Publicar com HTTPS
+
+Em um servidor Linux com Docker Compose, aponte o DNS do domínio para o IP do servidor e permita conexões externas nas portas 80 e 443. Na pasta servidor, copie .env.example para .env e informe apenas o hostname em STOKIO_DOMINIO, sem o prefixo https://. Mantenha o arquivo .env privado.
+
+    docker compose config -q
+    docker compose up -d --build
+    curl --fail https://estoque.exemplo.com/health
+
+Substitua estoque.exemplo.com pelo seu domínio. O Caddy emite e renova o certificado e redireciona HTTP para HTTPS. Só o Caddy publica portas na rede. Os volumes preservam o SQLite e os certificados ao recriar os contêineres. Configure uma cópia externa do banco antes de usar dados reais.
+
+Use o endereço HTTPS em Loja compartilhada no APK existente. O certificado de produção depende de DNS e das portas públicas acessíveis.
+
 ## E-mail de solicitação
 
 Configure `STOKIO_SMTP_HOST`, `STOKIO_SMTP_PORT` (padrão 587), `STOKIO_EMAIL_FROM` e, se exigido pelo provedor, `STOKIO_SMTP_USER` e `STOKIO_SMTP_PASSWORD`. O servidor usa STARTTLS. A solicitação fica disponível em Equipe mesmo se o serviço de e-mail estiver indisponível, e o aplicativo informa se o envio foi confirmado.

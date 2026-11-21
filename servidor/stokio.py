@@ -1,4 +1,5 @@
 import hashlib
+import ipaddress
 import json
 import os
 import secrets
@@ -387,9 +388,14 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(data,dict):
                 raise ApiError(400,"Dados inválidos.")
             token=self.headers.get("Authorization","").removeprefix("Bearer ")
+            ip = self.client_address[0]
+            if os.environ.get("STOKIO_PROXY_PRIVADO") == "1":
+                forwarded = self.headers.get("X-Stokio-Client-IP")
+                if forwarded:
+                    ip = str(ipaddress.ip_address(forwarded))
             with database() as db:
                 try:
-                    result=action(db,self.command,parts[1:],data,token,self.client_address[0])
+                    result=action(db,self.command,parts[1:],data,token,ip)
                     db.commit()
                 except Exception:
                     db.rollback()

@@ -51,3 +51,4 @@ app.*.map.json
 /dados/
 /servidor/dados/
 /servidor/__pycache__/
+/servidor/.env
