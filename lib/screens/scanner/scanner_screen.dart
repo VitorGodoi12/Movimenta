@@ -97,7 +97,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     width: area.width,
                     height: area.height,
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppCores.roxo, width: 3),
+                      border: Border.all(color: AppCores.verde, width: 3),
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),

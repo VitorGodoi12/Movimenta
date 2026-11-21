@@ -61,7 +61,7 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
               width: double.infinity,
               padding: EdgeInsets.fromLTRB(24, topo + 24, 24, 24),
               decoration: const BoxDecoration(
-                color: AppCores.roxo,
+                color: AppCores.verde,
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(32),
                 ),

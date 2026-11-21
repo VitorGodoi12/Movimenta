@@ -7,11 +7,18 @@ import 'package:stokio/widgets/nivel_estoque.dart';
 import 'package:stokio/widgets/selo_situacao.dart';
 
 class ProdutoTile extends StatelessWidget {
-  const ProdutoTile({super.key, required this.produto, this.onTap, this.acao});
+  const ProdutoTile({
+    super.key,
+    required this.produto,
+    this.onTap,
+    this.acao,
+    this.compacto = false,
+  });
 
   final Produto produto;
   final VoidCallback? onTap;
   final Widget? acao;
+  final bool compacto;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +43,88 @@ class ProdutoTile extends StatelessWidget {
     final inicial = produto.nome.trim().isEmpty
         ? '?'
         : produto.nome.trim()[0].toUpperCase();
+
+    if (compacto) {
+      final fundo = produto.situacao.fundo;
+      final cor = switch (produto.situacao) {
+        SituacaoEstoque.zerado => AppCores.zerado,
+        SituacaoEstoque.baixo => const Color(0xFF845300),
+        SituacaoEstoque.normal => AppCores.verdeForte,
+      };
+      return InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppCores.verdeSuave,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  inicial,
+                  style: t.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppCores.verdeForte,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      produto.nome,
+                      style: t.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      validade == null
+                          ? detalhe
+                          : 'Vence ${formatarData(validade)}',
+                      style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                    ),
+                    if (produto.minimo > 0) ...[
+                      const SizedBox(height: 5),
+                      LinearProgressIndicator(
+                        value: (produto.quantidade / (produto.minimo * 2))
+                            .clamp(0.0, 1.0),
+                        borderRadius: BorderRadius.circular(8),
+                        backgroundColor: AppCores.fundo,
+                        color: produto.situacao == SituacaoEstoque.baixo
+                            ? AppCores.baixo
+                            : cor,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: fundo,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${produto.quantidade} ${produto.unidade}',
+                  style: t.labelMedium?.copyWith(
+                    color: cor,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Material(
       color: AppCores.branco,

@@ -44,6 +44,10 @@ A atualização do aplicativo Android conserva os dados locais. Backups anterior
 
 Acesse **Loja compartilhada** na tela inicial ou em **Mais**. O modo conectado tem contas de dono e funcionário, aprovação de equipe, corredores, estoque por categoria e catálogo por GTIN. A configuração do banco e do envio de e-mails está no [guia do servidor](servidor/README.md).
 
+## Stokio 1.4
+
+A edição Android mostra alertas do estoque local na central de notificações. Para permitir o som e conferir a entrega, abra **Mais → Configurações e backup → Ativar alertas sonoros**, depois toque em **Testar notificação**. O Android controla volume, permissões e horário efetivo da verificação diária. Pix, dinheiro e cartão registram a forma de pagamento da venda.
+
 ## Compilar e testar
 
 ```sh

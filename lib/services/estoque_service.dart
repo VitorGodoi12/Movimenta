@@ -217,6 +217,15 @@ class EstoqueService extends ChangeNotifier {
             diasDesde(m.data) < dias,
       );
 
+  List<int> vendasPorDia(int dias) {
+    final valores = List<int>.filled(dias, 0);
+    for (final movimento in _saidasComMotivo(Motivos.venda, dias)) {
+      final idade = diasDesde(movimento.data);
+      if (idade >= 0) valores[dias - 1 - idade] -= movimento.delta;
+    }
+    return valores;
+  }
+
   int perdasUnidades(int dias) => _saidasComMotivo(
     Motivos.perda,
     dias,
@@ -444,6 +453,7 @@ class EstoqueService extends ChangeNotifier {
     int quantidade, {
     String? motivo,
     DateTime? validade,
+    String? pagamento,
   }) {
     final atual = produto.quantidade;
     int delta;
@@ -461,7 +471,14 @@ class EstoqueService extends ChangeNotifier {
     if (quantidade < 0 || delta == 0) return null;
 
     final lotes = produto.alterarSaldo(delta, vencimento: validade);
-    return _registrar(produto, tipo, delta, motivo: motivo, lotes: lotes);
+    return _registrar(
+      produto,
+      tipo,
+      delta,
+      motivo: motivo,
+      lotes: lotes,
+      pagamento: pagamento,
+    );
   }
 
   /// Para ajuste, [quantidade] é a contagem real (o total que existe agora).
@@ -485,7 +502,10 @@ class EstoqueService extends ChangeNotifier {
   }
 
   /// Registra várias saídas de uma vez (venda rápida).
-  List<Movimentacao> registrarVenda(List<ItemVenda> itens) {
+  List<Movimentacao> registrarVenda(
+    List<ItemVenda> itens, {
+    String? pagamento,
+  }) {
     final quantidades = <Produto, int>{};
     for (final item in itens) {
       final produto = _buscar(item.produto.id);
@@ -503,6 +523,7 @@ class EstoqueService extends ChangeNotifier {
         TipoMovimento.saida,
         quantidade,
         motivo: Motivos.venda,
+        pagamento: pagamento,
       );
       if (movimento != null) movs.add(movimento);
     }
@@ -568,6 +589,7 @@ class EstoqueService extends ChangeNotifier {
     TipoMovimento tipo,
     int delta, {
     String? motivo,
+    String? pagamento,
     DateTime? data,
     Map<DateTime?, int> lotes = const {},
   }) {
@@ -579,6 +601,7 @@ class EstoqueService extends ChangeNotifier {
       delta: delta,
       data: data ?? DateTime.now(),
       lotes: lotes,
+      pagamento: pagamento,
       motivo: motivo,
     );
     _historico.insert(0, mov);

@@ -80,7 +80,7 @@ class FornecedoresScreen extends StatelessWidget {
                             : IconButton.filled(
                                 tooltip: 'Chamar no WhatsApp',
                                 style: IconButton.styleFrom(
-                                  backgroundColor: AppCores.roxo,
+                                  backgroundColor: AppCores.verde,
                                   foregroundColor: AppCores.preto,
                                 ),
                                 icon: const Icon(Icons.chat_outlined),

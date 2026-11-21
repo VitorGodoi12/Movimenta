@@ -45,7 +45,10 @@ void main() {
       expect(produto.lotes[antes], 3);
 
       servico.movimentar(produto, TipoMovimento.entrada, 5, validade: depois);
-      final venda = servico.registrarVenda([ItemVenda(produto, 4)]);
+      final venda = servico.registrarVenda([
+        ItemVenda(produto, 4),
+      ], pagamento: 'Pix');
+      expect(Movimentacao.fromJson(venda.single.toJson()).pagamento, 'Pix');
       expect(produto.lotes[antes], isNull);
       expect(produto.lotes[depois], 4);
       expect(produto.quantidade, 25);

@@ -18,7 +18,7 @@ class EstadoVazio extends StatelessWidget {
     final t = Theme.of(context).textTheme;
 
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -27,7 +27,7 @@ class EstadoVazio extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: const BoxDecoration(
-                color: AppCores.roxoSuave,
+                color: AppCores.verdeSuave,
                 shape: BoxShape.circle,
               ),
               child: Icon(icone, size: 28),

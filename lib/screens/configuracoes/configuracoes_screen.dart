@@ -5,6 +5,7 @@ import 'package:stokio/services/backup_service.dart';
 import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/services/exportacao_service.dart';
 import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/services/notificacoes.dart';
 import 'package:stokio/theme/app_theme.dart';
 import 'package:stokio/widgets/dialogos.dart';
 import 'package:stokio/utils/formatadores.dart';
@@ -149,6 +150,28 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
+          if (Notificacoes.disponivel) ...[
+            Text('Notificações no celular', style: titulo),
+            opcao(
+              Icons.notifications_active_outlined,
+              'Ativar alertas sonoros',
+              () async {
+                if (await Notificacoes.ativar()) {
+                  if (mounted)
+                    avisar(context, 'Alertas disponíveis neste aparelho.');
+                } else {
+                  await Notificacoes.abrirConfiguracoes();
+                }
+              },
+              detalhe: 'Estoque baixo, itens zerados e vencimentos do estoque local.',
+            ),
+            opcao(Icons.volume_up_outlined, 'Testar notificação', () async {
+              if (!await Notificacoes.testar() && mounted) {
+                avisar(context, 'Ative as notificações para receber o teste.');
+              }
+            }),
+            const SizedBox(height: 16),
+          ],
           Text('Aviso de validade', style: titulo),
           const SizedBox(height: 4),
           Text(
@@ -236,7 +259,7 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Stokio 1.2.1',
+            'Stokio 1.4.0',
             style: t.bodySmall?.copyWith(color: AppCores.cinza),
           ),
         ],

@@ -16,7 +16,10 @@ class MovimentacaoTile extends StatelessWidget {
       TipoMovimento.entrada => (Icons.add, 'Entrada'),
       TipoMovimento.saida => (Icons.remove, 'Saída'),
       TipoMovimento.ajuste => (Icons.tune, 'Ajuste de contagem'),
-      TipoMovimento.cadastro => (Icons.inventory_2_outlined, 'Cadastro inicial'),
+      TipoMovimento.cadastro => (
+        Icons.inventory_2_outlined,
+        'Cadastro inicial',
+      ),
     };
     final motivo = mov.motivo == null ? '' : ' (${mov.motivo})';
     final valor = '${mov.delta > 0 ? '+' : ''}${mov.delta}';
@@ -29,7 +32,7 @@ class MovimentacaoTile extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: const BoxDecoration(
-              color: AppCores.roxoSuave,
+              color: AppCores.verdeSuave,
               shape: BoxShape.circle,
             ),
             child: Icon(icone, size: 20),
@@ -48,6 +51,8 @@ class MovimentacaoTile extends StatelessWidget {
                   '$titulo$motivo, ${formatarQuando(mov.data)}',
                   style: t.bodySmall?.copyWith(color: AppCores.cinza),
                 ),
+                if (mov.pagamento case final pagamento?)
+                  Text('Pagamento: $pagamento', style: t.bodySmall),
               ],
             ),
           ),

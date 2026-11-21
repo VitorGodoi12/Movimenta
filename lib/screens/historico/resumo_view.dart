@@ -28,7 +28,7 @@ class ResumoView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppCores.roxo,
+                color: AppCores.verde,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Column(
@@ -38,8 +38,9 @@ class ResumoView extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     formatarPreco(estoque.valorEmEstoque),
-                    style: t.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
+                    style: t.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -71,8 +72,7 @@ class ResumoView extends StatelessWidget {
             _Numero(
               rotulo: 'Lucro estimado em 30 dias',
               valor: formatarPreco(estoque.lucroEstimado(30)),
-              nota:
-                  'Só conta produtos com preço de custo informado, usando os preços de hoje.',
+              nota: 'Só conta produtos com preço de custo informado, usando os preços de hoje.',
             ),
             const SizedBox(height: 24),
             Text(
@@ -95,14 +95,16 @@ class ResumoView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: perdasQtd > 0 ? AppCores.zeradoFundo : AppCores.roxoSuave,
+                color: perdasQtd > 0
+                    ? AppCores.zeradoFundo
+                    : AppCores.verdeSuave,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
                 perdasQtd == 0
                     ? 'Nenhuma perda registrada.'
                     : '$perdasQtd unidades, cerca de ${formatarPreco(perdasValor)}. '
-                        'Conta as saídas com o motivo "Perda ou vencimento".',
+                          'Conta as saídas com o motivo "Perda ou vencimento".',
                 style: t.bodyMedium,
               ),
             ),
@@ -165,19 +167,22 @@ class _GraficoSemana extends StatelessWidget {
                   children: [
                     Text(
                       '${valores[i]}',
-                      style: t.labelMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: t.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Container(
                       height: maximo == 0
                           ? 6
-                          : (valores[i] / maximo * alturaMax).clamp(6.0, alturaMax).toDouble(),
+                          : (valores[i] / maximo * alturaMax)
+                                .clamp(6.0, alturaMax)
+                                .toDouble(),
                       decoration: BoxDecoration(
                         // Hoje em preto, os outros dias em roxo.
                         color: i == valores.length - 1
                             ? AppCores.preto
-                            : AppCores.roxo,
+                            : AppCores.verde,
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
@@ -238,7 +243,7 @@ class _LinhaRanking extends StatelessWidget {
                 Container(
                   height: 8,
                   decoration: BoxDecoration(
-                    color: AppCores.roxoSuave,
+                    color: AppCores.verdeSuave,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -246,7 +251,7 @@ class _LinhaRanking extends StatelessWidget {
                   height: 8,
                   width: c.maxWidth * fracao,
                   decoration: BoxDecoration(
-                    color: AppCores.roxo,
+                    color: AppCores.verde,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -273,7 +278,7 @@ class _Numero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppCores.roxoCampo,
+        color: AppCores.verdeCampo,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppCores.linha),
       ),

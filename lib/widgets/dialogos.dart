@@ -52,7 +52,7 @@ void avisarComDesfazer(
         content: Text(texto),
         action: SnackBarAction(
           label: 'Desfazer',
-          textColor: AppCores.roxo,
+          textColor: AppCores.verde,
           onPressed: () => estoque.desfazerVarias(movs),
         ),
       ),

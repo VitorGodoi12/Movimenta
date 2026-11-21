@@ -9,8 +9,10 @@ import 'package:stokio/services/categorias_mercado.dart';
 import 'package:stokio/services/perfil_service.dart';
 import 'package:stokio/widgets/estado_vazio.dart';
 import 'package:stokio/widgets/produto_tile.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/widgets/cartao_painel.dart';
 
-enum FiltroEstoque { todos, acabando, zerados, vencendo }
+enum FiltroEstoque { todos, acabando, zerados, vencendo, emFalta }
 
 enum _Ordem { nome, menorEstoque, validade }
 
@@ -38,6 +40,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
     FiltroEstoque.acabando => 'Acabando',
     FiltroEstoque.zerados => 'Zerados',
     FiltroEstoque.vencendo => 'Vencendo',
+    FiltroEstoque.emFalta => 'Em falta',
   };
 
   String _rotuloOrdem(_Ordem o) => switch (o) {
@@ -69,6 +72,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
         FiltroEstoque.acabando => p.situacao == SituacaoEstoque.baixo,
         FiltroEstoque.zerados => p.situacao == SituacaoEstoque.zerado,
         FiltroEstoque.vencendo => _venceLogo(p),
+        FiltroEstoque.emFalta => p.situacao != SituacaoEstoque.normal,
       };
       return okBusca &&
           okFiltro &&
@@ -119,14 +123,6 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
         }
         final categorias = grupos.keys.toList()
           ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-        final linhas = [
-          for (final categoria in categorias) ...<Object>[
-            categoria,
-            if (!_recolhidas.contains(categoria) || _busca.isNotEmpty)
-              ...grupos[categoria]!,
-          ],
-        ];
-
         final todasCategorias =
             estoque.produtos.map(_nomeCategoria).toSet().toList()..sort();
         return Scaffold(
@@ -165,7 +161,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                 child: TextField(
                   onChanged: (v) => setState(() => _busca = v),
                   decoration: InputDecoration(
-                    hintText: 'Buscar por nome, categoria, local ou código',
+                    hintText: 'Buscar produto ou código',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: IconButton(
                       tooltip: 'Escanear código de barras',
@@ -181,11 +177,30 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
-                    for (final f in FiltroEstoque.values)
+                    for (final f in {
+                      FiltroEstoque.todos,
+                      FiltroEstoque.vencendo,
+                      FiltroEstoque.emFalta,
+                      if (_filtro == FiltroEstoque.acabando ||
+                          _filtro == FiltroEstoque.zerados)
+                        _filtro,
+                    })
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(_rotuloFiltro(f)),
+                          selectedColor: AppCores.preto,
+                          labelStyle: TextStyle(
+                            color: _filtro == f ? Colors.white : AppCores.preto,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          label: Text(switch (f) {
+                            FiltroEstoque.todos => 'Todos ${estoque.total}',
+                            FiltroEstoque.vencendo =>
+                              'Vencendo ${estoque.vencendo.length + estoque.vencidos.length}',
+                            FiltroEstoque.emFalta =>
+                              'Em falta ${estoque.baixos.length + estoque.zerados.length}',
+                            _ => _rotuloFiltro(f),
+                          }),
                           selected: _filtro == f,
                           showCheckmark: false,
                           onSelected: (_) => setState(() => _filtro = f),
@@ -235,38 +250,66 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 104),
-                        itemCount: linhas.length,
+                        itemCount: categorias.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, i) {
-                          final linha = linhas[i];
-                          if (linha is String) {
-                            return Semantics(
-                              header: true,
-                              child: ListTile(
+                          final categoria = categorias[i];
+                          final aberto =
+                              !_recolhidas.contains(categoria) ||
+                              _busca.isNotEmpty;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ListTile(
                                 contentPadding: EdgeInsets.zero,
-                                title: Text(linha),
+                                title: Text(
+                                  categoria,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppCores.cinza,
+                                  ),
+                                ),
                                 trailing: Icon(
-                                  _recolhidas.contains(linha)
-                                      ? Icons.expand_more
-                                      : Icons.expand_less,
+                                  aberto
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
                                 ),
                                 onTap: () => setState(() {
-                                  if (!_recolhidas.remove(linha))
-                                    _recolhidas.add(linha);
+                                  if (!_recolhidas.remove(categoria))
+                                    _recolhidas.add(categoria);
                                 }),
                               ),
-                            );
-                          }
-                          final produto = linha as Produto;
-                          return ProdutoTile(
-                            produto: produto,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ProdutoDetalheScreen(produto: produto),
-                              ),
-                            ),
+                              if (aberto)
+                                CartaoPainel(
+                                  padding: EdgeInsets.zero,
+                                  child: Column(
+                                    children: [
+                                      for (final (indice, produto)
+                                          in grupos[categoria]!.indexed) ...[
+                                        if (indice > 0)
+                                          const Divider(
+                                            height: 1,
+                                            indent: 12,
+                                            endIndent: 12,
+                                          ),
+                                        ProdutoTile(
+                                          produto: produto,
+                                          compacto: true,
+                                          onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  ProdutoDetalheScreen(
+                                                    produto: produto,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                            ],
                           );
                         },
                       ),

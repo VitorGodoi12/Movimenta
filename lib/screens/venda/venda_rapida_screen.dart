@@ -37,6 +37,7 @@ class VendaRapidaScreen extends StatefulWidget {
 class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
   final List<_ItemCarrinho> _itens = [];
   bool _camera = false;
+  String? _pagamento;
   int _sessaoCamera = 0;
   String? _ultimoCodigo;
   String? _leitura;
@@ -59,8 +60,6 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
 
   double get _total =>
       _itens.fold(0.0, (soma, i) => soma + i.quantidade * i.produto.preco);
-
-  int get _unidades => _itens.fold(0, (soma, i) => soma + i.quantidade);
 
   /// Devolve (deu certo?, mensagem).
   (bool, String) _adicionar(Produto p) {
@@ -131,10 +130,46 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
     if (!ok) avisar(context, msg);
   }
 
+  Future<void> _digitarCodigo() async {
+    if (_camera) _escanear();
+    var codigo = '';
+    final valor = await showDialog<String>(
+      context: context,
+      builder: (dialogo) => AlertDialog(
+        title: const Text('Digitar código manualmente'),
+        content: TextField(
+          autofocus: true,
+          keyboardType: TextInputType.text,
+          decoration: const InputDecoration(labelText: 'Código de barras'),
+          onChanged: (texto) => codigo = texto.trim(),
+          onSubmitted: (_) => Navigator.pop(dialogo, codigo),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogo),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogo, codigo),
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+    if (valor == null || valor.isEmpty || !mounted) return;
+    final produto = estoque.porCodigo(valor);
+    if (produto == null) {
+      avisar(context, 'Código não cadastrado.');
+      return;
+    }
+    final (ok, mensagem) = _adicionar(produto);
+    if (!ok) avisar(context, mensagem);
+  }
+
   void _finalizar() {
     final total = _total;
     final itens = [for (final i in _itens) ItemVenda(i.produto, i.quantidade)];
-    final movs = estoque.registrarVenda(itens);
+    final movs = estoque.registrarVenda(itens, pagamento: _pagamento);
     if (movs.isEmpty) {
       avisar(context, 'Confira as quantidades disponíveis antes de finalizar.');
       return;
@@ -143,6 +178,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
     if (widget.incorporada) {
       setState(() {
         _itens.clear();
+        _pagamento = null;
         _camera = false;
         _leitura = null;
       });
@@ -156,7 +192,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
           content: Text('Venda registrada: ${formatarPreco(total)}'),
           action: SnackBarAction(
             label: 'Desfazer',
-            textColor: AppCores.roxo,
+            textColor: AppCores.verde,
             onPressed: () => estoque.desfazerVarias(movs),
           ),
         ),
@@ -171,23 +207,98 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
       appBar: AppBar(title: const Text('Venda rápida')),
       body: Column(
         children: [
-          if (_camera && widget.ativa)
-            Flexible(
-              child: SizedBox(
-                height: 180,
-                width: double.infinity,
-                child: MobileScanner(
-                  key: ValueKey(_sessaoCamera),
-                  fit: BoxFit.contain,
-                  tapToFocus: true,
-                  onDetect: _detectar,
-                  errorBuilder: (context, erro) => avisoCameraLeitor(
-                    erro,
-                    tentarNovamente: () => setState(() => _sessaoCamera++),
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: ColoredBox(
+                  color: AppCores.preto,
+                  child: SizedBox(
+                    height: 155,
+                    width: double.infinity,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (_camera && widget.ativa)
+                          MobileScanner(
+                            key: ValueKey(_sessaoCamera),
+                            fit: BoxFit.contain,
+                            tapToFocus: true,
+                            onDetect: _detectar,
+                            errorBuilder: (context, erro) => avisoCameraLeitor(
+                              erro,
+                              tentarNovamente: () =>
+                                  setState(() => _sessaoCamera++),
+                            ),
+                          )
+                        else
+                          Center(
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: _escanear,
+                              icon: const Icon(Icons.qr_code_scanner),
+                              label: const Text('Abrir câmera'),
+                            ),
+                          ),
+                        if (_camera && widget.ativa)
+                          IgnorePointer(
+                            child: Center(
+                              child: FractionallySizedBox(
+                                widthFactor: 0.68,
+                                heightFactor: 0.62,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: const Color(0xFF43DCA0),
+                                      width: 2.5,
+                                    ),
+                                    borderRadius: BorderRadius.circular(17),
+                                  ),
+                                  child: Center(
+                                    child: FractionallySizedBox(
+                                      widthFactor: 0.82,
+                                      child: SizedBox(
+                                        height: 2,
+                                        child: ColoredBox(
+                                          color: Color(0xFF43DCA0),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (_camera && widget.ativa)
+                          Positioned(
+                            right: 4,
+                            top: 4,
+                            child: IconButton.filled(
+                              tooltip: 'Fechar câmera',
+                              onPressed: _escanear,
+                              icon: const Icon(Icons.close),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
+          ),
+          Wrap(
+            spacing: 4,
+            children: [
+              TextButton(
+                onPressed: _digitarCodigo,
+                child: const Text('Digitar código manualmente'),
+              ),
+              TextButton(onPressed: _buscar, child: const Text('Buscar')),
+            ],
+          ),
           if (_leitura != null)
             Padding(
               padding: const EdgeInsets.all(8),
@@ -278,46 +389,29 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 6,
                       children: [
-                        Text(
-                          '$_unidades ${_unidades == 1 ? 'item' : 'itens'}',
-                          style: t.bodyMedium?.copyWith(color: AppCores.cinza),
-                        ),
-                        const Spacer(),
-                        Text('Total  ', style: t.bodyMedium),
-                        Text(
-                          formatarPreco(_total),
-                          style: t.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
+                        for (final forma in const ['Pix', 'Dinheiro', 'Cartão'])
+                          ChoiceChip(
+                            label: Text(forma),
+                            selected: _pagamento == forma,
+                            showCheckmark: false,
+                            onSelected: (valor) => setState(
+                              () => _pagamento = valor ? forma : null,
+                            ),
                           ),
-                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _escanear,
-                            icon: const Icon(Icons.qr_code_scanner),
-                            label: Text(_camera ? 'Fechar câmera' : 'Escanear'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _buscar,
-                            icon: const Icon(Icons.search),
-                            label: const Text('Buscar'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     FilledButton(
                       onPressed: _itens.isEmpty ? null : _finalizar,
-                      child: const Text('Finalizar venda'),
+                      child: Row(
+                        children: [
+                          const Expanded(child: Text('Finalizar venda')),
+                          Text(formatarPreco(_total)),
+                        ],
+                      ),
                     ),
                   ],
                 ),

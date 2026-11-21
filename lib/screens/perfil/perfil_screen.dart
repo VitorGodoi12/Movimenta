@@ -34,13 +34,14 @@ class PerfilScreen extends StatelessWidget {
                     height: 72,
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(
-                      color: AppCores.roxo,
+                      color: AppCores.verde,
                       shape: BoxShape.circle,
                     ),
                     child: Text(
                       inicial,
-                      style: t.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                      style: t.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -50,16 +51,18 @@ class PerfilScreen extends StatelessWidget {
                       children: [
                         Text(
                           nome,
-                          style: t.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                          style: t.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                        Text(cliente?.estabelecimento ?? '',
-                            style: t.bodyMedium),
+                        Text(
+                          cliente?.estabelecimento ?? '',
+                          style: t.bodyMedium,
+                        ),
                         if ((cliente?.email ?? '').isNotEmpty)
                           Text(
                             cliente!.email,
-                            style:
-                                t.bodySmall?.copyWith(color: AppCores.cinza),
+                            style: t.bodySmall?.copyWith(color: AppCores.cinza),
                           ),
                       ],
                     ),
@@ -77,8 +80,7 @@ class PerfilScreen extends StatelessWidget {
                 titulo: 'Venda rápida',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const VendaRapidaScreen()),
+                  MaterialPageRoute(builder: (_) => const VendaRapidaScreen()),
                 ),
               ),
               _Opcao(
@@ -86,8 +88,7 @@ class PerfilScreen extends StatelessWidget {
                 titulo: 'Inventário',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const InventarioScreen()),
+                  MaterialPageRoute(builder: (_) => const InventarioScreen()),
                 ),
               ),
               _Opcao(
@@ -95,8 +96,7 @@ class PerfilScreen extends StatelessWidget {
                 titulo: 'Fornecedores',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const FornecedoresScreen()),
+                  MaterialPageRoute(builder: (_) => const FornecedoresScreen()),
                 ),
               ),
               _Opcao(
@@ -104,8 +104,7 @@ class PerfilScreen extends StatelessWidget {
                 titulo: 'Lista de compras',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const ListaComprasScreen()),
+                  MaterialPageRoute(builder: (_) => const ListaComprasScreen()),
                 ),
               ),
               _Opcao(
@@ -114,7 +113,8 @@ class PerfilScreen extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const ConfiguracoesScreen()),
+                    builder: (_) => const ConfiguracoesScreen(),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -150,8 +150,9 @@ class _EditarPerfilSheet extends StatefulWidget {
 class _EditarPerfilSheetState extends State<_EditarPerfilSheet> {
   final _chave = GlobalKey<FormState>();
   late final _nome = TextEditingController(text: perfil.cliente?.nome ?? '');
-  late final _estabelecimento =
-      TextEditingController(text: perfil.cliente?.estabelecimento ?? '');
+  late final _estabelecimento = TextEditingController(
+    text: perfil.cliente?.estabelecimento ?? '',
+  );
   late final _email = TextEditingController(text: perfil.cliente?.email ?? '');
 
   @override
@@ -192,9 +193,7 @@ class _EditarPerfilSheetState extends State<_EditarPerfilSheet> {
             children: [
               Text(
                 'Dados do estabelecimento',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
+                style: Theme.of(context).textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 16),
@@ -208,16 +207,18 @@ class _EditarPerfilSheetState extends State<_EditarPerfilSheet> {
               TextFormField(
                 controller: _estabelecimento,
                 textCapitalization: TextCapitalization.words,
-                decoration:
-                    const InputDecoration(labelText: 'Nome do estabelecimento'),
+                decoration: const InputDecoration(
+                  labelText: 'Nome do estabelecimento',
+                ),
                 validator: _obrigatorio,
               ),
               const SizedBox(height: 14),
               TextFormField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
-                decoration:
-                    const InputDecoration(labelText: 'E-mail (opcional)'),
+                decoration: const InputDecoration(
+                  labelText: 'E-mail (opcional)',
+                ),
               ),
               const SizedBox(height: 20),
               FilledButton(onPressed: _salvar, child: const Text('Salvar')),

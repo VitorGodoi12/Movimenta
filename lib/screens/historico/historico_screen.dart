@@ -31,7 +31,7 @@ class HistoricoScreen extends StatelessWidget {
           bottom: const TabBar(
             labelColor: AppCores.preto,
             unselectedLabelColor: AppCores.cinza,
-            indicatorColor: AppCores.roxo,
+            indicatorColor: AppCores.verde,
             indicatorWeight: 3,
             dividerColor: AppCores.linha,
             labelStyle: TextStyle(fontWeight: FontWeight.w700),
@@ -41,12 +41,7 @@ class HistoricoScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [
-            _ListaMovimentacoes(),
-            ResumoView(),
-          ],
-        ),
+        body: const TabBarView(children: [_ListaMovimentacoes(), ResumoView()]),
       ),
     );
   }
@@ -65,19 +60,19 @@ class _ListaMovimentacoesState extends State<_ListaMovimentacoes> {
   _FiltroMov _filtro = _FiltroMov.todas;
 
   String _rotulo(_FiltroMov f) => switch (f) {
-        _FiltroMov.todas => 'Todas',
-        _FiltroMov.entradas => 'Entradas',
-        _FiltroMov.saidas => 'Saídas',
-        _FiltroMov.ajustes => 'Ajustes',
-      };
+    _FiltroMov.todas => 'Todas',
+    _FiltroMov.entradas => 'Entradas',
+    _FiltroMov.saidas => 'Saídas',
+    _FiltroMov.ajustes => 'Ajustes',
+  };
 
   bool _passa(Movimentacao m) => switch (_filtro) {
-        _FiltroMov.todas => true,
-        _FiltroMov.entradas =>
-          m.tipo == TipoMovimento.entrada || m.tipo == TipoMovimento.cadastro,
-        _FiltroMov.saidas => m.tipo == TipoMovimento.saida,
-        _FiltroMov.ajustes => m.tipo == TipoMovimento.ajuste,
-      };
+    _FiltroMov.todas => true,
+    _FiltroMov.entradas =>
+      m.tipo == TipoMovimento.entrada || m.tipo == TipoMovimento.cadastro,
+    _FiltroMov.saidas => m.tipo == TipoMovimento.saida,
+    _FiltroMov.ajustes => m.tipo == TipoMovimento.ajuste,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -107,8 +102,10 @@ class _ListaMovimentacoesState extends State<_ListaMovimentacoes> {
               height: 56,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 children: [
                   for (final f in _FiltroMov.values)
                     Padding(
@@ -128,36 +125,34 @@ class _ListaMovimentacoesState extends State<_ListaMovimentacoes> {
                   ? const EstadoVazio(
                       icone: Icons.history,
                       titulo: 'Nada registrado ainda',
-                      texto:
-                          'Entradas, saídas, ajustes e cadastros aparecem aqui.',
+                      texto: 'Entradas, saídas, ajustes e cadastros aparecem aqui.',
                     )
                   : lista.isEmpty
-                      ? const EstadoVazio(
-                          icone: Icons.filter_alt_off_outlined,
-                          titulo: 'Nada neste filtro',
-                          texto: 'Escolha outro tipo de movimentação.',
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                          itemCount: itens.length,
-                          itemBuilder: (context, i) {
-                            final item = itens[i];
-                            if (item is String) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 16, bottom: 2),
-                                child: Text(
-                                  item,
-                                  style: t.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: AppCores.cinza,
-                                  ),
-                                ),
-                              );
-                            }
-                            return MovimentacaoTile(mov: item as Movimentacao);
-                          },
-                        ),
+                  ? const EstadoVazio(
+                      icone: Icons.filter_alt_off_outlined,
+                      titulo: 'Nada neste filtro',
+                      texto: 'Escolha outro tipo de movimentação.',
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      itemCount: itens.length,
+                      itemBuilder: (context, i) {
+                        final item = itens[i];
+                        if (item is String) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 2),
+                            child: Text(
+                              item,
+                              style: t.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: AppCores.cinza,
+                              ),
+                            ),
+                          );
+                        }
+                        return MovimentacaoTile(mov: item as Movimentacao);
+                      },
+                    ),
             ),
           ],
         );

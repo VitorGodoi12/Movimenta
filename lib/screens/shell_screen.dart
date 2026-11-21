@@ -12,6 +12,11 @@ import 'package:stokio/screens/inventario/inventario_screen.dart';
 import 'package:stokio/screens/perfil/perfil_screen.dart';
 import 'package:stokio/screens/venda/venda_rapida_screen.dart';
 import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/exportacao_service.dart';
+import 'package:stokio/services/perfil_service.dart';
+import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/utils/formatadores.dart';
+import 'package:stokio/widgets/cartao_painel.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -40,7 +45,7 @@ class _ShellScreenState extends State<ShellScreen> {
         body: IndexedStack(
           index: _indice,
           children: [
-            HomeScreen(abrirEstoque: () => _ir(1), abrirVenda: () => _ir(2)),
+            const HomeScreen(),
             const EstoqueScreen(),
             VendaRapidaScreen(incorporada: true, ativa: _indice == 2),
             const _MaisScreen(),
@@ -61,8 +66,8 @@ class _ShellScreenState extends State<ShellScreen> {
               label: 'Estoque',
             ),
             NavigationDestination(
-              icon: Icon(Icons.point_of_sale_outlined),
-              selectedIcon: Icon(Icons.point_of_sale),
+              icon: _AtalhoLeitor(),
+              selectedIcon: _AtalhoLeitor(),
               label: 'Vender',
             ),
             NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
@@ -73,11 +78,43 @@ class _ShellScreenState extends State<ShellScreen> {
   }
 }
 
+class _AtalhoLeitor extends StatelessWidget {
+  const _AtalhoLeitor();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 45,
+    height: 45,
+    decoration: BoxDecoration(
+      color: AppCores.verdeAcao,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: AppCores.verdeAcao.withValues(alpha: 0.32),
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 21),
+  );
+}
+
 class _MaisScreen extends StatelessWidget {
   const _MaisScreen();
 
+  List<int> _semanasDoMes(int dias) {
+    final vendas = estoque.vendasPorDia(dias);
+    return [
+      for (var i = 0; i < vendas.length; i += 7)
+        vendas.skip(i).take(7).fold(0, (soma, valor) => soma + valor),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final agora = DateTime.now();
     final destinos = <(IconData, String, Widget)>[
       (Icons.storefront_outlined, 'Loja compartilhada', const LojaScreen()),
       (
@@ -111,20 +148,115 @@ class _MaisScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mais')),
       body: ListenableBuilder(
-        listenable: estoque,
+        listenable: Listenable.merge([estoque, perfil]),
         builder: (context, _) => ListView(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
           children: [
-            for (final (icone, titulo, tela) in destinos)
-              ListTile(
-                leading: Icon(icone),
-                title: Text(titulo),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.push<void>(
-                  context,
-                  MaterialPageRoute(builder: (_) => tela),
-                ),
+            CartaoPainel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Resumo do mês',
+                          style: t.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${agora.month.toString().padLeft(2, '0')}/${agora.year}',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    formatarPreco(estoque.lucroEstimado(agora.day)),
+                    style: t.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Text('Lucro estimado · vendas com custo informado'),
+                  const SizedBox(height: 12),
+                  GraficoPainel(valores: _semanasDoMes(agora.day)),
+                  const SizedBox(height: 4),
+                  const Text('Unidades vendidas por semana do mês'),
+                ],
               ),
+            ),
+            const SizedBox(height: 12),
+            CartaoPainel(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (final (i, (icone, titulo, tela))
+                      in destinos.indexed) ...[
+                    if (i > 0)
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                    ListTile(
+                      leading: Icon(icone, color: AppCores.verdeForte),
+                      title: Text(titulo),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push<void>(
+                        context,
+                        MaterialPageRoute(builder: (_) => tela),
+                      ),
+                    ),
+                  ],
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.table_chart_outlined,
+                      color: AppCores.verdeForte,
+                    ),
+                    title: const Text('Exportar CSV'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final tipo = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => SimpleDialog(
+                          title: const Text('Exportar CSV'),
+                          children: [
+                            SimpleDialogOption(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Estoque'),
+                            ),
+                            SimpleDialogOption(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Histórico'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (tipo != null) {
+                        await ExportacaoService.compartilhar(
+                          tipo ? 'estoque-stokio.csv' : 'historico-stokio.csv',
+                          tipo
+                              ? ExportacaoService.csvEstoque()
+                              : ExportacaoService.csvHistorico(),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppCores.verdeSuave,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                perfil.ultimoBackup == null
+                    ? 'Estoque local salvo neste aparelho. Nenhum backup registrado.'
+                    : 'Estoque local salvo neste aparelho. Último backup em ${formatarData(perfil.ultimoBackup!)}.',
+                style: t.bodyMedium?.copyWith(color: AppCores.verdeForte),
+              ),
+            ),
           ],
         ),
       ),

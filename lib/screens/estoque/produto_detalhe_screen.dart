@@ -102,7 +102,7 @@ class ProdutoDetalheScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppCores.roxoSuave,
+                    color: AppCores.verdeSuave,
                     borderRadius: BorderRadius.circular(28),
                   ),
                   child: Column(

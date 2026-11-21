@@ -26,11 +26,14 @@ class _InventarioScreenState extends State<InventarioScreen> {
   void initState() {
     super.initState();
     // Ordena por local, para contar prateleira por prateleira.
-    _produtos = [...estoque.produtos]..sort((a, b) {
+    _produtos = [...estoque.produtos]
+      ..sort((a, b) {
         final la = (a.local ?? '').toLowerCase();
         final lb = (b.local ?? '').toLowerCase();
         final c = la.compareTo(lb);
-        return c != 0 ? c : a.nome.toLowerCase().compareTo(b.nome.toLowerCase());
+        return c != 0
+            ? c
+            : a.nome.toLowerCase().compareTo(b.nome.toLowerCase());
       });
     for (final p in _produtos) {
       _campos[p.id] = TextEditingController();
@@ -89,7 +92,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
           content: Text('Inventário aplicado: ${movs.length} ajustes.'),
           action: SnackBarAction(
             label: 'Desfazer',
-            textColor: AppCores.roxo,
+            textColor: AppCores.verde,
             onPressed: () => estoque.desfazerVarias(movs),
           ),
         ),
@@ -101,11 +104,13 @@ class _InventarioScreenState extends State<InventarioScreen> {
     final t = Theme.of(context).textTheme;
     final b = _busca.trim().toLowerCase();
     final lista = _produtos
-        .where((p) =>
-            b.isEmpty ||
-            p.nome.toLowerCase().contains(b) ||
-            (p.local ?? '').toLowerCase().contains(b) ||
-            (p.codigoBarras ?? '').contains(b))
+        .where(
+          (p) =>
+              b.isEmpty ||
+              p.nome.toLowerCase().contains(b) ||
+              (p.local ?? '').toLowerCase().contains(b) ||
+              (p.codigoBarras ?? '').contains(b),
+        )
         .toList();
     final qtdDiferencas = _diferencas.length;
 
@@ -166,12 +171,14 @@ class _InventarioScreenState extends State<InventarioScreen> {
                                   Text(
                                     p.nome,
                                     style: t.bodyLarge?.copyWith(
-                                        fontWeight: FontWeight.w700),
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                   Text(
                                     'No sistema: ${p.quantidade} ${p.unidade}${local.isEmpty ? '' : ', $local'}',
-                                    style: t.bodySmall
-                                        ?.copyWith(color: AppCores.cinza),
+                                    style: t.bodySmall?.copyWith(
+                                      color: AppCores.cinza,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -184,12 +191,14 @@ class _InventarioScreenState extends State<InventarioScreen> {
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.center,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly
+                                  FilteringTextInputFormatter.digitsOnly,
                                 ],
                                 decoration: const InputDecoration(
                                   hintText: 'Contei',
                                   contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 12),
+                                    horizontal: 8,
+                                    vertical: 12,
+                                  ),
                                 ),
                                 onChanged: (_) => setState(() {}),
                               ),
@@ -211,9 +220,11 @@ class _InventarioScreenState extends State<InventarioScreen> {
                       padding: const EdgeInsets.all(20),
                       child: FilledButton(
                         onPressed: qtdDiferencas == 0 ? null : _aplicar,
-                        child: Text(qtdDiferencas == 0
-                            ? 'Nenhuma diferença encontrada'
-                            : 'Aplicar contagem ($qtdDiferencas)'),
+                        child: Text(
+                          qtdDiferencas == 0
+                              ? 'Nenhuma diferença encontrada'
+                              : 'Aplicar contagem ($qtdDiferencas)',
+                        ),
                       ),
                     ),
                   ),

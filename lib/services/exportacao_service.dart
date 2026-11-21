@@ -40,27 +40,37 @@ class ExportacaoService {
       ]),
     ];
     for (final p in estoque.produtos) {
-      linhas.add(_linha([
-        p.codigoBarras ?? '',
-        p.nome,
-        p.categoria,
-        p.local ?? '',
-        estoque.fornecedorDe(p)?.nome ?? '',
-        p.quantidade,
-        p.unidade,
-        p.minimo,
-        _numero(p.custo),
-        _numero(p.preco),
-        p.validade == null ? '' : formatarData(p.validade!),
-        _numero(p.valorEmEstoque),
-      ]));
+      linhas.add(
+        _linha([
+          p.codigoBarras ?? '',
+          p.nome,
+          p.categoria,
+          p.local ?? '',
+          estoque.fornecedorDe(p)?.nome ?? '',
+          p.quantidade,
+          p.unidade,
+          p.minimo,
+          _numero(p.custo),
+          _numero(p.preco),
+          p.validade == null ? '' : formatarData(p.validade!),
+          _numero(p.valorEmEstoque),
+        ]),
+      );
     }
     return linhas.join('\r\n');
   }
 
   static String csvHistorico() {
     final linhas = <String>[
-      _linha(['Data', 'Hora', 'Produto', 'Tipo', 'Motivo', 'Variação']),
+      _linha([
+        'Data',
+        'Hora',
+        'Produto',
+        'Tipo',
+        'Motivo',
+        'Variação',
+        'Pagamento',
+      ]),
     ];
     for (final m in estoque.historico) {
       final tipo = switch (m.tipo) {
@@ -69,14 +79,17 @@ class ExportacaoService {
         TipoMovimento.ajuste => 'Ajuste',
         TipoMovimento.cadastro => 'Cadastro',
       };
-      linhas.add(_linha([
-        formatarData(m.data),
-        formatarHora(m.data),
-        m.produtoNome,
-        tipo,
-        m.motivo ?? '',
-        m.delta,
-      ]));
+      linhas.add(
+        _linha([
+          formatarData(m.data),
+          formatarHora(m.data),
+          m.produtoNome,
+          tipo,
+          m.motivo ?? '',
+          m.delta,
+          m.pagamento ?? '',
+        ]),
+      );
     }
     return linhas.join('\r\n');
   }

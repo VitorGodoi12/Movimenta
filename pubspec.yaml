@@ -1,7 +1,7 @@
 name: stokio
 description: Controle de estoque simples para pequenos negócios.
 publish_to: 'none'
-version: 1.3.0+6
+version: 1.4.0+7
 
 environment:
   sdk: '>=3.13.0 <4.0.0'

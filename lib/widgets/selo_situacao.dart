@@ -5,22 +5,22 @@ import 'package:stokio/utils/formatadores.dart';
 
 extension SituacaoVisual on SituacaoEstoque {
   Color get cor => switch (this) {
-        SituacaoEstoque.normal => AppCores.roxo,
-        SituacaoEstoque.baixo => AppCores.baixo,
-        SituacaoEstoque.zerado => AppCores.zerado,
-      };
+    SituacaoEstoque.normal => AppCores.verde,
+    SituacaoEstoque.baixo => AppCores.baixo,
+    SituacaoEstoque.zerado => AppCores.zerado,
+  };
 
   Color get fundo => switch (this) {
-        SituacaoEstoque.normal => AppCores.roxoSuave,
-        SituacaoEstoque.baixo => AppCores.baixoFundo,
-        SituacaoEstoque.zerado => AppCores.zeradoFundo,
-      };
+    SituacaoEstoque.normal => AppCores.verdeSuave,
+    SituacaoEstoque.baixo => AppCores.baixoFundo,
+    SituacaoEstoque.zerado => AppCores.zeradoFundo,
+  };
 
   String get rotulo => switch (this) {
-        SituacaoEstoque.normal => 'Em dia',
-        SituacaoEstoque.baixo => 'Acabando',
-        SituacaoEstoque.zerado => 'Zerado',
-      };
+    SituacaoEstoque.normal => 'Em dia',
+    SituacaoEstoque.baixo => 'Acabando',
+    SituacaoEstoque.zerado => 'Zerado',
+  };
 }
 
 class _Selo extends StatelessWidget {
@@ -84,15 +84,15 @@ class SeloValidade extends StatelessWidget {
     if (dias == null) return const SizedBox.shrink();
     return switch (situacao) {
       SituacaoValidade.vencido => _Selo(
-          cor: AppCores.zerado,
-          fundo: AppCores.zeradoFundo,
-          texto: descreverValidade(dias!),
-        ),
+        cor: AppCores.zerado,
+        fundo: AppCores.zeradoFundo,
+        texto: descreverValidade(dias!),
+      ),
       SituacaoValidade.vencendo => _Selo(
-          cor: AppCores.baixo,
-          fundo: AppCores.baixoFundo,
-          texto: descreverValidade(dias!),
-        ),
+        cor: AppCores.baixo,
+        fundo: AppCores.baixoFundo,
+        texto: descreverValidade(dias!),
+      ),
       _ => const SizedBox.shrink(),
     };
   }
