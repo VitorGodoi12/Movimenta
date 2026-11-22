@@ -6,6 +6,8 @@ import 'package:stokio/screens/alertas/lista_compras_screen.dart';
 import 'package:stokio/screens/estoque/estoque_screen.dart';
 import 'package:stokio/screens/estoque/produto_detalhe_screen.dart';
 import 'package:stokio/screens/inventario/inventario_screen.dart';
+import 'package:stokio/screens/historico/historico_screen.dart';
+import 'package:stokio/widgets/movimentacao_tile.dart';
 import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/services/perfil_service.dart';
 import 'package:stokio/theme/app_theme.dart';
@@ -44,7 +46,7 @@ class HomeScreen extends StatelessWidget {
                       height: 45,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppCores.verdeSuave,
+                        color: AppCores.roxoSuave,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
@@ -52,7 +54,7 @@ class HomeScreen extends StatelessWidget {
                             ? 'S'
                             : nome.characters.first.toUpperCase(),
                         style: t.titleLarge?.copyWith(
-                          color: AppCores.verdeForte,
+                          color: AppCores.roxoForte,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -90,7 +92,11 @@ class HomeScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(19),
                   decoration: BoxDecoration(
-                    color: AppCores.verdeForte,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF7655BD), Color(0xFF4D318F)],
+                    ),
                     borderRadius: BorderRadius.circular(26),
                   ),
                   child: Column(
@@ -99,7 +105,7 @@ class HomeScreen extends StatelessWidget {
                       Text(
                         'Valor em estoque',
                         style: t.titleSmall?.copyWith(
-                          color: AppCores.verdeSuave,
+                          color: AppCores.roxoSuave,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -117,7 +123,7 @@ class HomeScreen extends StatelessWidget {
                             child: Text(
                               '${recentes.fold<int>(0, (a, b) => a + b)} un. vendidas em 7 dias',
                               style: t.bodySmall?.copyWith(
-                                color: AppCores.verdeSuave,
+                                color: AppCores.roxoSuave,
                               ),
                             ),
                           ),
@@ -206,6 +212,35 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (estoque.historico.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  CartaoPainel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Movimentações recentes',
+                                style: t.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  _abrir(context, const HistoricoScreen()),
+                              child: const Text('Ver histórico'),
+                            ),
+                          ],
+                        ),
+                        for (final movimento in estoque.historico.take(3))
+                          MovimentacaoTile(mov: movimento),
+                      ],
+                    ),
+                  ),
+                ],
                 if (estoque.maisVendidos().isNotEmpty) ...[
                   const SizedBox(height: 12),
                   CartaoPainel(

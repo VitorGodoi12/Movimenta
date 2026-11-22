@@ -5,13 +5,13 @@ import 'package:stokio/utils/formatadores.dart';
 
 extension SituacaoVisual on SituacaoEstoque {
   Color get cor => switch (this) {
-    SituacaoEstoque.normal => AppCores.verde,
+    SituacaoEstoque.normal => AppCores.roxo,
     SituacaoEstoque.baixo => AppCores.baixo,
     SituacaoEstoque.zerado => AppCores.zerado,
   };
 
   Color get fundo => switch (this) {
-    SituacaoEstoque.normal => AppCores.verdeSuave,
+    SituacaoEstoque.normal => AppCores.roxoSuave,
     SituacaoEstoque.baixo => AppCores.baixoFundo,
     SituacaoEstoque.zerado => AppCores.zeradoFundo,
   };

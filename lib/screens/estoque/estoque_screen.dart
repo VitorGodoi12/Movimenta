@@ -97,6 +97,15 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
     return lista;
   }
 
+  Future<void> _escolherCategoria(Iterable<String> categorias) async {
+    final selecionada = await showSearch<String?>(
+      context: context,
+      delegate: _BuscaCategoria(categorias),
+    );
+    if (selecionada == null || !mounted) return;
+    setState(() => _categoria = selecionada.isEmpty ? null : selecionada);
+  }
+
   Future<void> _importar() async {
     final total = await Navigator.push<int>(
       context,
@@ -152,7 +161,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
               MaterialPageRoute(builder: (_) => const ProdutoFormScreen()),
             ),
             icon: const Icon(Icons.add),
-            label: const Text('Novo produto'),
+            label: const Text('Cadastrar'),
           ),
           body: Column(
             children: [
@@ -161,7 +170,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                 child: TextField(
                   onChanged: (v) => setState(() => _busca = v),
                   decoration: InputDecoration(
-                    hintText: 'Buscar produto ou código',
+                    hintText: 'Buscar produto, código ou local',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: IconButton(
                       tooltip: 'Escanear código de barras',
@@ -215,24 +224,15 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                     horizontal: 20,
                     vertical: 6,
                   ),
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: todasCategorias.contains(_categoria)
-                        ? _categoria
-                        : '',
-                    items: [
-                      const DropdownMenuItem(
-                        value: '',
-                        child: Text('Todas as categorias'),
-                      ),
-                      for (final categoria in todasCategorias)
-                        DropdownMenuItem(
-                          value: categoria,
-                          child: Text(categoria),
-                        ),
-                    ],
-                    onChanged: (v) =>
-                        setState(() => _categoria = v == '' ? null : v),
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.category_outlined),
+                    label: Text(
+                      todasCategorias.contains(_categoria)
+                          ? _categoria!
+                          : 'Todas as categorias',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onPressed: () => _escolherCategoria(todasCategorias),
                   ),
                 ),
               Expanded(
@@ -318,6 +318,49 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _BuscaCategoria extends SearchDelegate<String?> {
+  _BuscaCategoria(this.categorias)
+    : super(searchFieldLabel: 'Buscar categoria');
+
+  final Iterable<String> categorias;
+
+  @override
+  List<Widget> buildActions(BuildContext context) => [
+    IconButton(
+      tooltip: 'Limpar busca',
+      icon: const Icon(Icons.clear),
+      onPressed: () => query = '',
+    ),
+  ];
+
+  @override
+  Widget buildLeading(BuildContext context) =>
+      BackButton(onPressed: () => close(context, null));
+
+  @override
+  Widget buildResults(BuildContext context) => buildSuggestions(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final busca = query.trim().toLowerCase();
+    return ListView(
+      children: [
+        if (busca.isEmpty)
+          ListTile(
+            title: const Text('Todas as categorias'),
+            onTap: () => close(context, ''),
+          ),
+        for (final categoria in categorias)
+          if (categoria.toLowerCase().contains(busca))
+            ListTile(
+              title: Text(categoria),
+              onTap: () => close(context, categoria),
+            ),
+      ],
     );
   }
 }

@@ -92,7 +92,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
           content: Text('Inventário aplicado: ${movs.length} ajustes.'),
           action: SnackBarAction(
             label: 'Desfazer',
-            textColor: AppCores.verde,
+            textColor: AppCores.roxo,
             onPressed: () => estoque.desfazerVarias(movs),
           ),
         ),

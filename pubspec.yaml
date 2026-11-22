@@ -1,7 +1,7 @@
 name: stokio
 description: Controle de estoque simples para pequenos negócios.
 publish_to: 'none'
-version: 1.4.0+7
+version: 1.5.0+8
 
 environment:
   sdk: '>=3.13.0 <4.0.0'
@@ -15,7 +15,6 @@ dependencies:
   shared_preferences: ^2.3.2
   mobile_scanner: ^7.5.0
   share_plus: ^10.1.4
-  http: ^1.2.0
   url_launcher: ^6.3.1
 
 dev_dependencies:
@@ -27,3 +26,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/stokio.png
+    - assets/catalogo_inicial.json

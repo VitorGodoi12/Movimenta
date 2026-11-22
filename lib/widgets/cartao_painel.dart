@@ -54,8 +54,8 @@ class GraficoPainel extends StatelessWidget {
                       : math.max(3, 54 * valor / maximo).toDouble(),
                   decoration: BoxDecoration(
                     color: i == valores.length - 1
-                        ? AppCores.verdeAcao
-                        : AppCores.verdeSuave,
+                        ? AppCores.roxoAcao
+                        : AppCores.roxoSuave,
                     borderRadius: BorderRadius.circular(7),
                   ),
                 ),
@@ -88,7 +88,7 @@ class _Linha extends CustomPainter {
     canvas.drawPath(
       caminho,
       Paint()
-        ..color = const Color(0xFF87E3BF)
+        ..color = const Color(0xFFE0D1FF)
         ..strokeWidth = 2.5
         ..strokeJoin = StrokeJoin.round
         ..strokeCap = StrokeCap.round

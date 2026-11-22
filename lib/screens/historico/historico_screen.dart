@@ -31,7 +31,7 @@ class HistoricoScreen extends StatelessWidget {
           bottom: const TabBar(
             labelColor: AppCores.preto,
             unselectedLabelColor: AppCores.cinza,
-            indicatorColor: AppCores.verde,
+            indicatorColor: AppCores.roxo,
             indicatorWeight: 3,
             dividerColor: AppCores.linha,
             labelStyle: TextStyle(fontWeight: FontWeight.w700),

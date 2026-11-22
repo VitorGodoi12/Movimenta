@@ -1,5 +1,0 @@
-{$STOKIO_DOMINIO} {
-	reverse_proxy {$STOKIO_UPSTREAM:api:8765} {
-		header_up X-Stokio-Client-IP {remote_host}
-	}
-}

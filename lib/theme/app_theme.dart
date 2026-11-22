@@ -1,21 +1,21 @@
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
-/// Paleta do Stokio: verde claro, branco e preto.
+/// Paleta do Stokio: roxo claro, branco e preto.
 /// Amarelo e vermelho aparecem só para sinalizar estoque baixo/zerado.
 class AppCores {
   AppCores._();
 
-  static const verdeForte = Color(0xFF0B5C45);
-  static const verde = Color(0xFFBCE9D9);
-  static const verdeSuave = Color(0xFFDFF3EC);
-  static const verdeCampo = Color(0xFFFFFFFF);
-  static const fundo = Color(0xFFF4F6F3);
-  static const verdeAcao = Color(0xFF0D8662);
+  static const roxoForte = Color(0xFF6242A7);
+  static const roxo = Color(0xFFB69CF2);
+  static const roxoSuave = Color(0xFFEEE8FC);
+  static const roxoCampo = Color(0xFFFFFFFF);
+  static const fundo = Color(0xFFF7F5FB);
+  static const roxoAcao = Color(0xFF6242A7);
   static const branco = Color(0xFFFFFFFF);
-  static const preto = Color(0xFF12201B);
-  static const cinza = Color(0xFF55665E);
-  static const linha = Color(0xFFDFE7DF);
+  static const preto = Color(0xFF181125);
+  static const cinza = Color(0xFF65626F);
+  static const linha = Color(0xFFE6E1F3);
 
   static const baixo = Color(0xFFF2B53D);
   static const baixoFundo = Color(0xFFFFF0CC);
@@ -31,14 +31,14 @@ class AppTheme {
 
     final esquema =
         ColorScheme.fromSeed(
-          seedColor: AppCores.verde,
+          seedColor: AppCores.roxo,
           brightness: Brightness.light,
         ).copyWith(
-          primary: AppCores.verde,
+          primary: AppCores.roxo,
           onPrimary: AppCores.preto,
-          secondary: AppCores.verde,
+          secondary: AppCores.roxo,
           onSecondary: AppCores.preto,
-          primaryContainer: AppCores.verdeSuave,
+          primaryContainer: AppCores.roxoSuave,
           onPrimaryContainer: AppCores.preto,
           surface: AppCores.branco,
           onSurface: AppCores.preto,
@@ -66,7 +66,7 @@ class AppTheme {
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppCores.fundo,
-        foregroundColor: AppCores.verdeForte,
+        foregroundColor: AppCores.roxoForte,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -78,7 +78,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppCores.verdeAcao,
+          backgroundColor: AppCores.roxoAcao,
           foregroundColor: AppCores.branco,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(borderRadius: raio14),
@@ -87,7 +87,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppCores.verdeForte,
+          foregroundColor: AppCores.roxoForte,
           minimumSize: const Size.fromHeight(52),
           side: const BorderSide(color: AppCores.linha),
           shape: RoundedRectangleBorder(borderRadius: raio14),
@@ -96,13 +96,13 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppCores.verdeForte,
+          foregroundColor: AppCores.roxoForte,
           textStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppCores.verdeCampo,
+        fillColor: AppCores.roxoCampo,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
@@ -137,7 +137,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppCores.branco,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppCores.verde,
+        indicatorColor: AppCores.roxo,
         height: 68,
         labelTextStyle: WidgetStatePropertyAll(
           texto.labelSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -148,7 +148,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppCores.branco,
-        selectedColor: AppCores.verde,
+        selectedColor: AppCores.roxo,
         side: const BorderSide(color: AppCores.linha),
         shape: const StadiumBorder(),
         labelStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w600),
@@ -156,16 +156,16 @@ class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           backgroundColor: AppCores.branco,
-          foregroundColor: AppCores.verdeForte,
-          selectedBackgroundColor: AppCores.verde,
+          foregroundColor: AppCores.roxoForte,
+          selectedBackgroundColor: AppCores.roxo,
           selectedForegroundColor: AppCores.preto,
           side: const BorderSide(color: AppCores.linha),
           textStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppCores.verde,
-        foregroundColor: AppCores.verdeForte,
+        backgroundColor: AppCores.roxo,
+        foregroundColor: AppCores.roxoForte,
         elevation: 2,
         extendedTextStyle: texto.labelLarge?.copyWith(
           fontWeight: FontWeight.w700,

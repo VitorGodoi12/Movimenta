@@ -28,7 +28,7 @@ class ResumoView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppCores.verde,
+                color: AppCores.roxo,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Column(
@@ -97,7 +97,7 @@ class ResumoView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: perdasQtd > 0
                     ? AppCores.zeradoFundo
-                    : AppCores.verdeSuave,
+                    : AppCores.roxoSuave,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
@@ -182,7 +182,7 @@ class _GraficoSemana extends StatelessWidget {
                         // Hoje em preto, os outros dias em roxo.
                         color: i == valores.length - 1
                             ? AppCores.preto
-                            : AppCores.verde,
+                            : AppCores.roxo,
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
@@ -243,7 +243,7 @@ class _LinhaRanking extends StatelessWidget {
                 Container(
                   height: 8,
                   decoration: BoxDecoration(
-                    color: AppCores.verdeSuave,
+                    color: AppCores.roxoSuave,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -251,7 +251,7 @@ class _LinhaRanking extends StatelessWidget {
                   height: 8,
                   width: c.maxWidth * fracao,
                   decoration: BoxDecoration(
-                    color: AppCores.verde,
+                    color: AppCores.roxo,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -278,7 +278,7 @@ class _Numero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppCores.verdeCampo,
+        color: AppCores.roxoCampo,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppCores.linha),
       ),

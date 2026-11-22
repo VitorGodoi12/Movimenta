@@ -145,7 +145,7 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
               ? null
               : SnackBarAction(
                   label: 'Desfazer',
-                  textColor: AppCores.verde,
+                  textColor: AppCores.roxo,
                   onPressed: () => estoque.desfazer(mov),
                 ),
         ),
@@ -238,7 +238,7 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
                   IconButton.filled(
                     tooltip: 'Escanear código de barras',
                     style: IconButton.styleFrom(
-                      backgroundColor: AppCores.verde,
+                      backgroundColor: AppCores.roxo,
                       foregroundColor: AppCores.preto,
                       minimumSize: const Size(52, 52),
                     ),

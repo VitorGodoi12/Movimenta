@@ -192,7 +192,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
           content: Text('Venda registrada: ${formatarPreco(total)}'),
           action: SnackBarAction(
             label: 'Desfazer',
-            textColor: AppCores.verde,
+            textColor: AppCores.roxo,
             onPressed: () => estoque.desfazerVarias(movs),
           ),
         ),
@@ -213,7 +213,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(22),
                 child: ColoredBox(
-                  color: AppCores.preto,
+                  color: const Color(0xFF211633),
                   child: SizedBox(
                     height: 155,
                     width: double.infinity,
@@ -252,7 +252,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                                 child: DecoratedBox(
                                   decoration: BoxDecoration(
                                     border: Border.all(
-                                      color: const Color(0xFF43DCA0),
+                                      color: const Color(0xFFB69CF2),
                                       width: 2.5,
                                     ),
                                     borderRadius: BorderRadius.circular(17),
@@ -263,7 +263,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                                       child: SizedBox(
                                         height: 2,
                                         child: ColoredBox(
-                                          color: Color(0xFF43DCA0),
+                                          color: Color(0xFFB69CF2),
                                         ),
                                       ),
                                     ),

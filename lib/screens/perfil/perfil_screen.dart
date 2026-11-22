@@ -34,7 +34,7 @@ class PerfilScreen extends StatelessWidget {
                     height: 72,
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(
-                      color: AppCores.verde,
+                      color: AppCores.roxo,
                       shape: BoxShape.circle,
                     ),
                     child: Text(

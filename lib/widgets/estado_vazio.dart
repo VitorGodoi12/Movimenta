@@ -27,7 +27,7 @@ class EstadoVazio extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: const BoxDecoration(
-                color: AppCores.verdeSuave,
+                color: AppCores.roxoSuave,
                 shape: BoxShape.circle,
               ),
               child: Icon(icone, size: 28),

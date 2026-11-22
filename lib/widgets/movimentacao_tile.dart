@@ -32,7 +32,7 @@ class MovimentacaoTile extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: const BoxDecoration(
-              color: AppCores.verdeSuave,
+              color: AppCores.roxoSuave,
               shape: BoxShape.circle,
             ),
             child: Icon(icone, size: 20),

@@ -4,7 +4,7 @@
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
-    "theme_color": "#B69CF2",
+    "theme_color": "#6242A7",
     "description": "Controle de estoque para pequenos negócios.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,

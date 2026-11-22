@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:stokio/models/produto.dart';
 import 'package:stokio/screens/scanner/scanner_screen.dart';
 import 'package:stokio/services/estoque_service.dart';
+import 'package:stokio/services/catalogo_local.dart';
+import 'package:stokio/services/categorias_mercado.dart';
+import 'package:stokio/theme/app_theme.dart';
 import 'package:stokio/widgets/campo_data.dart';
 
 /// Cadastro e edição de produto.
@@ -21,6 +24,27 @@ class ProdutoFormScreen extends StatefulWidget {
 
 class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   final _chave = GlobalKey<FormState>();
+  ProdutoCatalogo? _sugestaoCatalogo;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.produto == null && _codigo.text.isNotEmpty) {
+      _consultarCatalogo(_codigo.text);
+    }
+  }
+
+  Future<void> _consultarCatalogo(String codigo) async {
+    if (_editando) return;
+    try {
+      final produto = await CatalogoLocal.buscar(codigo);
+      if (mounted && _codigo.text.trim() == codigo.trim()) {
+        setState(() => _sugestaoCatalogo = produto);
+      }
+    } on Exception catch (erro) {
+      debugPrint('Catálogo local indisponível: $erro');
+    }
+  }
 
   static String _dinheiro(double v) =>
       v.toStringAsFixed(2).replaceAll('.', ',');
@@ -121,7 +145,12 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
 
   Future<void> _escanear() async {
     final c = await lerCodigo(context);
-    if (c != null && mounted) setState(() => _codigo.text = c);
+    if (c == null || !mounted) return;
+    setState(() {
+      _codigo.text = c;
+      _sugestaoCatalogo = null;
+    });
+    await _consultarCatalogo(c);
   }
 
   void _salvar() {
@@ -209,7 +238,27 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 ),
               ),
               validator: _validarCodigo,
+              onChanged: _consultarCatalogo,
             ),
+            if (_sugestaoCatalogo case final sugestao?)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Material(
+                  color: AppCores.roxoSuave,
+                  borderRadius: BorderRadius.circular(14),
+                  child: ListTile(
+                    leading: const Icon(Icons.inventory_2_outlined),
+                    title: Text(sugestao.nome),
+                    subtitle: Text('${sugestao.categoria} · catálogo local'),
+                    trailing: const Icon(Icons.add),
+                    onTap: () => setState(() {
+                      _nome.text = sugestao.nome;
+                      _categoria.text = sugestao.categoria;
+                      _sugestaoCatalogo = null;
+                    }),
+                  ),
+                ),
+              ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _nome,
@@ -223,6 +272,34 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(labelText: 'Categoria'),
               validator: _obrigatorio,
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.category_outlined),
+                label: const Text('Escolher categoria'),
+                onPressed: () async {
+                  final selecionada = await showDialog<String>(
+                    context: context,
+                    builder: (dialogo) => SimpleDialog(
+                      title: const Text('Categorias'),
+                      children: [
+                        for (final categoria in {
+                          ...categoriasMercado,
+                          ...estoque.categorias,
+                        })
+                          SimpleDialogOption(
+                            onPressed: () => Navigator.pop(dialogo, categoria),
+                            child: Text(categoria),
+                          ),
+                      ],
+                    ),
+                  );
+                  if (selecionada != null && mounted) {
+                    setState(() => _categoria.text = selecionada);
+                  }
+                },
+              ),
             ),
             if (sugestoes.isNotEmpty) ...[
               const SizedBox(height: 8),

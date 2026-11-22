@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:stokio/screens/login/loja_screen.dart';
 import 'package:stokio/models/cliente.dart';
 import 'package:stokio/screens/shell_screen.dart';
 import 'package:stokio/services/perfil_service.dart';
@@ -61,7 +60,7 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
               width: double.infinity,
               padding: EdgeInsets.fromLTRB(24, topo + 24, 24, 24),
               decoration: const BoxDecoration(
-                color: AppCores.verde,
+                color: AppCores.roxo,
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(32),
                 ),
@@ -139,17 +138,6 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
                         FilledButton(
                           onPressed: _comecar,
                           child: const Text('Começar a usar'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.push<void>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LojaScreen(),
-                            ),
-                          ),
-                          child: const Text(
-                            'Entrar ou cadastrar loja compartilhada',
-                          ),
                         ),
                       ],
                     ),

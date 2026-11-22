@@ -26,7 +26,7 @@ class NivelEstoque extends StatelessWidget {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: AppCores.verdeSuave,
+                  color: AppCores.roxoSuave,
                   borderRadius: raio,
                 ),
               ),

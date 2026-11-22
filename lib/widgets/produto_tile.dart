@@ -49,7 +49,7 @@ class ProdutoTile extends StatelessWidget {
       final cor = switch (produto.situacao) {
         SituacaoEstoque.zerado => AppCores.zerado,
         SituacaoEstoque.baixo => const Color(0xFF845300),
-        SituacaoEstoque.normal => AppCores.verdeForte,
+        SituacaoEstoque.normal => AppCores.roxoForte,
       };
       return InkWell(
         onTap: onTap,
@@ -62,14 +62,14 @@ class ProdutoTile extends StatelessWidget {
                 height: 40,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppCores.verdeSuave,
+                  color: AppCores.roxoSuave,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   inicial,
                   style: t.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: AppCores.verdeForte,
+                    color: AppCores.roxoForte,
                   ),
                 ),
               ),

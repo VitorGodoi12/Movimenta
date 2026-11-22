@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:stokio/screens/login/loja_screen.dart';
 import 'package:stokio/screens/alertas/alertas_screen.dart';
 import 'package:stokio/screens/alertas/lista_compras_screen.dart';
 import 'package:stokio/screens/configuracoes/configuracoes_screen.dart';
@@ -70,7 +69,10 @@ class _ShellScreenState extends State<ShellScreen> {
               selectedIcon: _AtalhoLeitor(),
               label: 'Vender',
             ),
-            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mais'),
+            NavigationDestination(
+              icon: Icon(Icons.grid_view_rounded),
+              label: 'Mais',
+            ),
           ],
         ),
       ),
@@ -86,11 +88,11 @@ class _AtalhoLeitor extends StatelessWidget {
     width: 45,
     height: 45,
     decoration: BoxDecoration(
-      color: AppCores.verdeAcao,
+      color: AppCores.roxoAcao,
       shape: BoxShape.circle,
       boxShadow: [
         BoxShadow(
-          color: AppCores.verdeAcao.withValues(alpha: 0.32),
+          color: AppCores.roxoAcao.withValues(alpha: 0.32),
           blurRadius: 10,
           offset: const Offset(0, 3),
         ),
@@ -116,7 +118,6 @@ class _MaisScreen extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final agora = DateTime.now();
     final destinos = <(IconData, String, Widget)>[
-      (Icons.storefront_outlined, 'Loja compartilhada', const LojaScreen()),
       (
         Icons.notifications_outlined,
         'Alertas de estoque e validade',
@@ -196,7 +197,7 @@ class _MaisScreen extends StatelessWidget {
                     if (i > 0)
                       const Divider(height: 1, indent: 16, endIndent: 16),
                     ListTile(
-                      leading: Icon(icone, color: AppCores.verdeForte),
+                      leading: Icon(icone, color: AppCores.roxoForte),
                       title: Text(titulo),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push<void>(
@@ -209,7 +210,7 @@ class _MaisScreen extends StatelessWidget {
                   ListTile(
                     leading: const Icon(
                       Icons.table_chart_outlined,
-                      color: AppCores.verdeForte,
+                      color: AppCores.roxoForte,
                     ),
                     title: const Text('Exportar CSV'),
                     trailing: const Icon(Icons.chevron_right),
@@ -247,14 +248,14 @@ class _MaisScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppCores.verdeSuave,
+                color: AppCores.roxoSuave,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
                 perfil.ultimoBackup == null
                     ? 'Estoque local salvo neste aparelho. Nenhum backup registrado.'
                     : 'Estoque local salvo neste aparelho. Último backup em ${formatarData(perfil.ultimoBackup!)}.',
-                style: t.bodyMedium?.copyWith(color: AppCores.verdeForte),
+                style: t.bodyMedium?.copyWith(color: AppCores.roxoForte),
               ),
             ),
           ],
