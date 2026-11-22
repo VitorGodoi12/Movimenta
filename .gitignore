@@ -52,3 +52,6 @@ app.*.map.json
 /servidor/dados/
 /servidor/__pycache__/
 /servidor/.env
+
+# Kotlin Gradle compiler state
+/android/.kotlin/
