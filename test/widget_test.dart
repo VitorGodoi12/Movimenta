@@ -30,6 +30,19 @@ void main() {
     await tester.tap(find.text('Vender'));
     await tester.pumpAndSettle();
     expect(find.text('Finalizar venda'), findsOneWidget);
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Loja'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Loja'), findsOneWidget);
+    await tester.tap(find.text('Cadastrar'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SegmentedButton<bool>>(find.byType(SegmentedButton<bool>))
+          .selected,
+      {true},
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Mais'));
     await tester.pumpAndSettle();
     expect(find.text('Configurações e backup'), findsOneWidget);

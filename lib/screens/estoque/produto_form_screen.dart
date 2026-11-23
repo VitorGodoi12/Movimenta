@@ -11,8 +11,14 @@ import 'package:stokio/widgets/campo_data.dart';
 /// Cadastro e edição de produto.
 /// Na edição a quantidade não aparece: ela muda por entradas, saídas e ajustes.
 class ProdutoFormScreen extends StatefulWidget {
-  const ProdutoFormScreen({super.key, this.produto, this.codigoInicial});
+  const ProdutoFormScreen({
+    super.key,
+    this.produto,
+    this.codigoInicial,
+    this.lojaInicial = false,
+  });
 
+  final bool lojaInicial;
   final Produto? produto;
 
   /// Código lido pelo scanner para preencher o formulário.
@@ -89,7 +95,11 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         : null;
   }
 
-  late DateTime? _validade = widget.produto?.validade;
+  late bool _naLoja = widget.produto?.naLoja ?? widget.lojaInicial;
+  late final _lotes = [
+    for (final lote in (widget.produto?.lotes ?? <DateTime?, int>{}).entries)
+      if (lote.key != null) _LoteEditavel(lote.key, lote.value),
+  ];
   late String? _fornecedorId = widget.produto?.fornecedorId;
 
   bool get _editando => widget.produto != null;
@@ -162,6 +172,33 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     final codigo = _codigo.text.trim().isEmpty ? null : _codigo.text.trim();
     final local = _local.text.trim().isEmpty ? null : _local.text.trim();
 
+    final total =
+        widget.produto?.quantidade ?? int.tryParse(_quantidade.text.trim());
+    if (total == null) return;
+    final lotes = <DateTime?, int>{};
+    var semData = total;
+    for (final lote in _lotes) {
+      if (lote.data == null ||
+          lote.quantidade <= 0 ||
+          lote.quantidade > semData) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Informe a data e a quantidade de cada lote. A soma dos lotes deve caber no saldo.',
+            ),
+          ),
+        );
+        return;
+      }
+      lotes.update(
+        lote.data,
+        (saldo) => saldo + lote.quantidade,
+        ifAbsent: () => lote.quantidade,
+      );
+      semData -= lote.quantidade;
+    }
+    if (semData > 0) lotes[null] = semData;
+
     if (_editando) {
       final p = widget.produto!;
       p
@@ -174,7 +211,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         ..preco = preco
         ..custo = custo
         ..codigoBarras = codigo
-        ..validade = _validade
+        ..definirLotes(lotes)
+        ..naLoja = _naLoja
         ..local = local
         ..fornecedorId = _fornecedorId;
       estoque.salvarAlteracoes(p);
@@ -184,7 +222,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
           id: estoque.novoId(),
           nome: _nome.text.trim(),
           categoria: _categoria.text.trim(),
-          quantidade: int.parse(_quantidade.text.trim()),
+          quantidade: total,
           minimo: minimo,
           preco: preco,
           custo: custo,
@@ -192,7 +230,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
           unidadesPorCaixa: int.tryParse(_caixa.text.trim()) ?? 0,
           unidadesPorFardo: int.tryParse(_fardo.text.trim()) ?? 0,
           codigoBarras: codigo,
-          validade: _validade,
+          lotes: lotes,
+          naLoja: _naLoja,
           local: local,
           fornecedorId: _fornecedorId,
         ),
@@ -222,239 +261,316 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       ),
       body: Form(
         key: _chave,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-          children: [
-            titulo('Identificação'),
-            TextFormField(
-              controller: _codigo,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Código de barras (opcional)',
-                suffixIcon: IconButton(
-                  tooltip: 'Escanear código de barras',
-                  icon: const Icon(Icons.qr_code_scanner),
-                  onPressed: _escanear,
-                ),
-              ),
-              validator: _validarCodigo,
-              onChanged: _consultarCatalogo,
-            ),
-            if (_sugestaoCatalogo case final sugestao?)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Material(
-                  color: AppCores.roxoSuave,
-                  borderRadius: BorderRadius.circular(14),
-                  child: ListTile(
-                    leading: const Icon(Icons.inventory_2_outlined),
-                    title: Text(sugestao.nome),
-                    subtitle: Text('${sugestao.categoria} · catálogo local'),
-                    trailing: const Icon(Icons.add),
-                    onTap: () => setState(() {
-                      _nome.text = sugestao.nome;
-                      _categoria.text = sugestao.categoria;
-                      _sugestaoCatalogo = null;
-                    }),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              titulo('Identificação'),
+              TextFormField(
+                controller: _codigo,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Código de barras (opcional)',
+                  suffixIcon: IconButton(
+                    tooltip: 'Escanear código de barras',
+                    icon: const Icon(Icons.qr_code_scanner),
+                    onPressed: _escanear,
                   ),
                 ),
+                validator: _validarCodigo,
+                onChanged: _consultarCatalogo,
               ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _nome,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(labelText: 'Nome do produto'),
-              validator: _obrigatorio,
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _categoria,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(labelText: 'Categoria'),
-              validator: _obrigatorio,
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                icon: const Icon(Icons.category_outlined),
-                label: const Text('Escolher categoria'),
-                onPressed: () async {
-                  final selecionada = await showDialog<String>(
-                    context: context,
-                    builder: (dialogo) => SimpleDialog(
-                      title: const Text('Categorias'),
-                      children: [
-                        for (final categoria in {
-                          ...categoriasMercado,
-                          ...estoque.categorias,
-                        })
-                          SimpleDialogOption(
-                            onPressed: () => Navigator.pop(dialogo, categoria),
-                            child: Text(categoria),
-                          ),
-                      ],
+              if (_sugestaoCatalogo case final sugestao?)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Material(
+                    color: AppCores.roxoSuave,
+                    borderRadius: BorderRadius.circular(14),
+                    child: ListTile(
+                      leading: const Icon(Icons.inventory_2_outlined),
+                      title: Text(sugestao.nome),
+                      subtitle: Text('${sugestao.categoria} · catálogo local'),
+                      trailing: const Icon(Icons.add),
+                      onTap: () => setState(() {
+                        _nome.text = sugestao.nome;
+                        _categoria.text = sugestao.categoria;
+                        _sugestaoCatalogo = null;
+                      }),
                     ),
-                  );
-                  if (selecionada != null && mounted) {
-                    setState(() => _categoria.text = selecionada);
-                  }
-                },
+                  ),
+                ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _nome,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(labelText: 'Nome do produto'),
+                validator: _obrigatorio,
               ),
-            ),
-            if (sugestoes.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _categoria,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(labelText: 'Categoria'),
+                validator: _obrigatorio,
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.category_outlined),
+                  label: const Text('Escolher categoria'),
+                  onPressed: () async {
+                    final selecionada = await showDialog<String>(
+                      context: context,
+                      builder: (dialogo) => SimpleDialog(
+                        title: const Text('Categorias'),
+                        children: [
+                          for (final categoria in {
+                            ...categoriasMercado,
+                            ...estoque.categorias,
+                          })
+                            SimpleDialogOption(
+                              onPressed: () =>
+                                  Navigator.pop(dialogo, categoria),
+                              child: Text(categoria),
+                            ),
+                        ],
+                      ),
+                    );
+                    if (selecionada != null && mounted) {
+                      setState(() => _categoria.text = selecionada);
+                    }
+                  },
+                ),
+              ),
+              if (sugestoes.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final c in sugestoes)
+                      ActionChip(
+                        label: Text(c),
+                        onPressed: () => setState(() => _categoria.text = c),
+                      ),
+                  ],
+                ),
+              ],
+              titulo('Estoque'),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final c in sugestoes)
-                    ActionChip(
-                      label: Text(c),
-                      onPressed: () => setState(() => _categoria.text = c),
+                  if (!_editando) ...[
+                    Expanded(
+                      child: TextFormField(
+                        controller: _quantidade,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: apenasNumeros,
+                        decoration: const InputDecoration(
+                          labelText: 'Quantidade atual',
+                        ),
+                        validator: _inteiro,
+                      ),
                     ),
-                ],
-              ),
-            ],
-            titulo('Estoque'),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!_editando) ...[
+                    const SizedBox(width: 12),
+                  ],
                   Expanded(
                     child: TextFormField(
-                      controller: _quantidade,
+                      controller: _minimo,
                       keyboardType: TextInputType.number,
                       inputFormatters: apenasNumeros,
                       decoration: const InputDecoration(
-                        labelText: 'Quantidade atual',
+                        labelText: 'Estoque mínimo',
                       ),
                       validator: _inteiro,
                     ),
                   ),
-                  const SizedBox(width: 12),
                 ],
-                Expanded(
-                  child: TextFormField(
-                    controller: _minimo,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: apenasNumeros,
-                    decoration: const InputDecoration(
-                      labelText: 'Estoque mínimo',
-                    ),
-                    validator: _inteiro,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _unidade,
-                    decoration: const InputDecoration(
-                      labelText: 'Unidade',
-                      hintText: 'un, kg, cx',
-                    ),
-                    validator: _obrigatorio,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    controller: _local,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Local (opcional)',
-                      hintText: 'Prateleira 2',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _caixa,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Unidades por caixa',
               ),
-              validator: _validarFator,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _fardo,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Unidades por fardo',
-              ),
-              validator: _validarFator,
-            ),
-            const SizedBox(height: 12),
-            if ((widget.produto?.lotes.length ?? 0) <= 1)
-              CampoData(
-                rotulo: 'Data de validade (opcional)',
-                valor: _validade,
-                aoMudar: (d) => setState(() => _validade = d),
-              ),
-            titulo('Preços'),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _custo,
-                    keyboardType: decimal,
-                    decoration: const InputDecoration(
-                      labelText: 'Custo (opcional)',
-                      prefixText: 'R\$ ',
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _unidade,
+                      decoration: const InputDecoration(
+                        labelText: 'Unidade',
+                        hintText: 'un, kg, cx',
+                      ),
+                      validator: _obrigatorio,
                     ),
-                    validator: _valorOpcional,
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _preco,
-                    keyboardType: decimal,
-                    decoration: const InputDecoration(
-                      labelText: 'Preço de venda',
-                      prefixText: 'R\$ ',
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _local,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Local (opcional)',
+                        hintText: 'Prateleira 2',
+                      ),
                     ),
-                    validator: _valor,
                   ),
-                ),
-              ],
-            ),
-            titulo('Compras'),
-            DropdownButtonFormField<String?>(
-              value: _fornecedorId,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Fornecedor (opcional)',
+                ],
               ),
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('Nenhum'),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _caixa,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Unidades por caixa',
                 ),
-                for (final f in estoque.fornecedores)
-                  DropdownMenuItem<String?>(
-                    value: f.id,
-                    child: Text(f.nome, overflow: TextOverflow.ellipsis),
+                validator: _validarFator,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _fardo,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Unidades por fardo',
+                ),
+                validator: _validarFator,
+              ),
+              const SizedBox(height: 12),
+              titulo('Área do produto'),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.inventory_2_outlined),
+                    label: Text('Estoque'),
                   ),
-              ],
-              onChanged: (v) => setState(() => _fornecedorId = v),
-            ),
-            const SizedBox(height: 28),
-            FilledButton(
-              onPressed: _salvar,
-              child: Text(_editando ? 'Salvar alterações' : 'Salvar produto'),
-            ),
-          ],
+                  ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.storefront_outlined),
+                    label: Text('Loja'),
+                  ),
+                ],
+                selected: {_naLoja},
+                onSelectionChanged: (areas) =>
+                    setState(() => _naLoja = areas.single),
+              ),
+              titulo('Lotes e validades'),
+              const Text(
+                'Divida o saldo por data. As unidades restantes ficam sem validade informada.',
+              ),
+              const SizedBox(height: 12),
+              for (final lote in _lotes)
+                Card(
+                  key: ObjectKey(lote),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        CampoData(
+                          rotulo: 'Validade do lote',
+                          valor: lote.data,
+                          aoMudar: (data) {
+                            if (mounted) setState(() => lote.data = data);
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: lote.quantidade == 0
+                                    ? ''
+                                    : lote.quantidade.toString(),
+                                keyboardType: TextInputType.number,
+                                inputFormatters: apenasNumeros,
+                                decoration: const InputDecoration(
+                                  labelText: 'Quantidade do lote',
+                                ),
+                                onChanged: (texto) =>
+                                    lote.quantidade = int.tryParse(texto) ?? 0,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Remover validade do lote',
+                              onPressed: () =>
+                                  setState(() => _lotes.remove(lote)),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              OutlinedButton.icon(
+                onPressed: () =>
+                    setState(() => _lotes.add(_LoteEditavel(null, 0))),
+                icon: const Icon(Icons.add),
+                label: const Text('Adicionar validade'),
+              ),
+              titulo('Preços'),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _custo,
+                      keyboardType: decimal,
+                      decoration: const InputDecoration(
+                        labelText: 'Custo (opcional)',
+                        prefixText: 'R\$ ',
+                      ),
+                      validator: _valorOpcional,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _preco,
+                      keyboardType: decimal,
+                      decoration: const InputDecoration(
+                        labelText: 'Preço de venda',
+                        prefixText: 'R\$ ',
+                      ),
+                      validator: _valor,
+                    ),
+                  ),
+                ],
+              ),
+              titulo('Compras'),
+              DropdownButtonFormField<String?>(
+                value: _fornecedorId,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Fornecedor (opcional)',
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Nenhum'),
+                  ),
+                  for (final f in estoque.fornecedores)
+                    DropdownMenuItem<String?>(
+                      value: f.id,
+                      child: Text(f.nome, overflow: TextOverflow.ellipsis),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _fornecedorId = v),
+              ),
+              const SizedBox(height: 28),
+              FilledButton(
+                onPressed: _salvar,
+                child: Text(_editando ? 'Salvar alterações' : 'Salvar produto'),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _LoteEditavel {
+  _LoteEditavel(this.data, this.quantidade);
+
+  DateTime? data;
+  int quantidade;
 }

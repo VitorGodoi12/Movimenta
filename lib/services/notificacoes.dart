@@ -27,8 +27,8 @@ class Notificacoes {
         'dias': perfil.diasAvisoValidade,
         'datas': [
           for (final produto in estoque.produtos)
-            if (produto.quantidade > 0 && produto.validade != null)
-              produto.validade!.toIso8601String().split('T').first,
+            for (final data in produto.lotes.keys.whereType<DateTime>())
+              data.toIso8601String().split('T').first,
         ],
       });
     } on PlatformException catch (erro) {

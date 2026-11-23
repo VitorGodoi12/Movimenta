@@ -183,7 +183,7 @@ class ProdutoDetalheScreen extends StatelessWidget {
               const SizedBox(height: 12),
               if (validade != null)
                 _Linha(
-                  rotulo: 'Validade',
+                  rotulo: 'Validade mais próxima',
                   valor: formatarData(validade),
                   complemento: situacaoValidade == SituacaoValidade.ok
                       ? null
@@ -193,7 +193,10 @@ class ProdutoDetalheScreen extends StatelessWidget {
                         ),
                 )
               else
-                const _Linha(rotulo: 'Validade', valor: 'Não informada'),
+                const _Linha(
+                  rotulo: 'Validade mais próxima',
+                  valor: 'Não informada',
+                ),
               _Linha(
                 rotulo: 'Preço de venda',
                 valor: formatarPreco(produto.preco),
@@ -209,9 +212,13 @@ class ProdutoDetalheScreen extends StatelessWidget {
                 rotulo: 'Valor em estoque',
                 valor: formatarPreco(produto.valorEmEstoque),
               ),
+              _Linha(
+                rotulo: 'Área',
+                valor: produto.naLoja ? 'Loja' : 'Estoque',
+              ),
               _Linha(rotulo: 'Estoque mínimo', valor: '${produto.minimo}'),
               _Linha(
-                rotulo: 'Local',
+                rotulo: 'Prateleira ou local',
                 valor: local.isEmpty ? 'Não informado' : local,
               ),
               _Linha(
@@ -224,7 +231,7 @@ class ProdutoDetalheScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               if (produto.lotes.isNotEmpty) ...[
-                Text('Lotes em estoque', style: t.titleMedium),
+                Text('Lotes e validades', style: t.titleMedium),
                 for (final MapEntry(key: data, value: saldo)
                     in produto.lotes.entries)
                   ListTile(
@@ -279,19 +286,16 @@ class _Linha extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppCores.linha)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(rotulo, style: t.bodyMedium?.copyWith(color: AppCores.cinza)),
-          const SizedBox(width: 16),
-          const Spacer(),
-          if (complemento != null) ...[complemento!, const SizedBox(width: 8)],
-          Flexible(
-            child: Text(
-              valor,
-              textAlign: TextAlign.end,
-              style: t.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
+          const SizedBox(height: 4),
+          Text(
+            valor,
+            style: t.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
+          if (complemento != null) ...[const SizedBox(height: 6), complemento!],
         ],
       ),
     );

@@ -19,6 +19,7 @@ class Produto {
     Map<DateTime?, int>? lotes,
     this.unidadesPorCaixa = 0,
     this.unidadesPorFardo = 0,
+    this.naLoja = false,
     this.local,
     this.fornecedorId,
   }) : _lotes = lotes ?? {if (quantidade > 0) validade: quantidade},
@@ -95,6 +96,13 @@ class Produto {
     }
   }
 
+  void definirLotes(Map<DateTime?, int> lotes) {
+    _lotes
+      ..clear()
+      ..addAll(lotes);
+    _validadeInicial = null;
+  }
+
   void copiarLotes(Produto produto) {
     _lotes
       ..clear()
@@ -129,6 +137,7 @@ class Produto {
 
   /// Onde fica guardado: "Prateleira 2", "Freezer"...
   String? local;
+  bool naLoja;
   String? fornecedorId;
 
   SituacaoEstoque get situacao {
@@ -171,6 +180,7 @@ class Produto {
     ],
     'codigoBarras': codigoBarras,
     'validade': validade?.toIso8601String(),
+    'naLoja': naLoja,
     'local': local,
     'fornecedorId': fornecedorId,
   };
@@ -199,6 +209,7 @@ class Produto {
     validade: j['validade'] == null
         ? null
         : DateTime.parse(j['validade'] as String),
+    naLoja: j['naLoja'] == true,
     local: j['local'] as String?,
     fornecedorId: j['fornecedorId'] as String?,
   );

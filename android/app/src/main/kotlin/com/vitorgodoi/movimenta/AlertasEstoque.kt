@@ -81,26 +81,31 @@ internal object AlertasEstoque {
         val fim = formato.format(limite.time)
         val datas = JSONArray(dados.getString("datas", "[]") ?: "[]")
         var vencidos = 0
-        var vencendo = 0
+        val proximasDatas = sortedSetOf<String>()
         for (i in 0 until datas.length()) {
             val data = datas.getString(i)
-            if (data < hoje) vencidos++ else if (data <= fim) vencendo++
+            if (data < hoje) vencidos++ else if (data <= fim) proximasDatas.add(data)
         }
         val baixo = dados.getInt("baixo", 0)
-        if (baixo + vencidos + vencendo == 0) {
+        if (baixo + vencidos == 0 && proximasDatas.isEmpty()) {
             gerente(context).cancel(ID)
             return
         }
         val texto = listOfNotNull(
             "$baixo com estoque baixo ou zerado".takeIf { baixo > 0 },
-            "$vencidos com validade vencida".takeIf { vencidos > 0 },
-            "$vencendo próximos da validade".takeIf { vencendo > 0 }
+            "$vencidos lote(s) com validade vencida".takeIf { vencidos > 0 },
+            proximasDatas.takeIf { it.isNotEmpty() }?.joinToString(
+                prefix = "Validades próximas: ",
+                limit = 5,
+                truncated = "…"
+            ) { data -> data.split('-').asReversed().joinToString("/") }
         ).joinToString(" · ")
         val tocouHoje = dados.getString("ultimoDia", null) == hoje
+        val mesmasDatas = dados.getString("ultimasDatas", null) == proximasDatas.joinToString()
         val notificacaoAtiva = gerente(context).activeNotifications.any { it.id == ID }
-        if (tocouHoje && !notificacaoAtiva) return
-        if (publicar(context, ID, "Seu estoque precisa de atenção", texto, tocouHoje)) {
-            dados.edit().putString("ultimoDia", hoje).apply()
+        if (tocouHoje && mesmasDatas && !notificacaoAtiva) return
+        if (publicar(context, ID, "Seu estoque precisa de atenção", texto, tocouHoje && mesmasDatas)) {
+            dados.edit().putString("ultimoDia", hoje).putString("ultimasDatas", proximasDatas.joinToString()).apply()
         }
     }
 

@@ -17,8 +17,13 @@ enum FiltroEstoque { todos, acabando, zerados, vencendo, emFalta }
 enum _Ordem { nome, menorEstoque, validade }
 
 class EstoqueScreen extends StatefulWidget {
-  const EstoqueScreen({super.key, this.filtroInicial = FiltroEstoque.todos});
+  const EstoqueScreen({
+    super.key,
+    this.filtroInicial = FiltroEstoque.todos,
+    this.loja,
+  });
 
+  final bool? loja;
   final FiltroEstoque filtroInicial;
 
   @override
@@ -122,7 +127,10 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
     return ListenableBuilder(
       listenable: Listenable.merge([estoque, perfil]),
       builder: (context, _) {
-        final lista = _filtrar(estoque.produtos);
+        final produtos = estoque.produtos
+            .where((p) => widget.loja == null || p.naLoja == widget.loja)
+            .toList();
+        final lista = _filtrar(produtos);
         final grupos = <String, List<Produto>>{};
         for (final produto in lista) {
           final categoria = _nomeCategoria(produto);
@@ -132,17 +140,18 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
         }
         final categorias = grupos.keys.toList()
           ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-        final todasCategorias =
-            estoque.produtos.map(_nomeCategoria).toSet().toList()..sort();
+        final todasCategorias = produtos.map(_nomeCategoria).toSet().toList()
+          ..sort();
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Estoque'),
+            title: Text(widget.loja == true ? 'Loja' : 'Estoque'),
             actions: [
-              IconButton(
-                tooltip: 'Importar lista de estoque',
-                onPressed: _importar,
-                icon: const Icon(Icons.playlist_add),
-              ),
+              if (widget.loja != true)
+                IconButton(
+                  tooltip: 'Importar lista de estoque',
+                  onPressed: _importar,
+                  icon: const Icon(Icons.playlist_add),
+                ),
               PopupMenuButton<_Ordem>(
                 tooltip: 'Ordenar',
                 icon: const Icon(Icons.sort),
@@ -156,9 +165,13 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
+            heroTag: null,
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const ProdutoFormScreen()),
+              MaterialPageRoute(
+                builder: (_) =>
+                    ProdutoFormScreen(lojaInicial: widget.loja == true),
+              ),
             ),
             icon: const Icon(Icons.add),
             label: const Text('Cadastrar'),
@@ -203,11 +216,11 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                           label: Text(switch (f) {
-                            FiltroEstoque.todos => 'Todos ${estoque.total}',
+                            FiltroEstoque.todos => 'Todos ${produtos.length}',
                             FiltroEstoque.vencendo =>
-                              'Vencendo ${estoque.vencendo.length + estoque.vencidos.length}',
+                              'Vencendo ${produtos.where(_venceLogo).length}',
                             FiltroEstoque.emFalta =>
-                              'Em falta ${estoque.baixos.length + estoque.zerados.length}',
+                              'Em falta ${produtos.where((p) => p.situacao != SituacaoEstoque.normal).length}',
                             _ => _rotuloFiltro(f),
                           }),
                           selected: _filtro == f,
@@ -236,14 +249,16 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                   ),
                 ),
               Expanded(
-                child: estoque.total == 0
-                    ? const EstadoVazio(
+                child: produtos.length == 0
+                    ? EstadoVazio(
                         icone: Icons.inventory_2_outlined,
                         titulo: 'Nenhum produto ainda',
-                        texto: 'Cadastre um produto ou importe uma lista de estoque.',
+                        texto: widget.loja == true
+                            ? 'Cadastre um produto na loja ou altere a área de um produto existente.'
+                            : 'Cadastre um produto ou importe uma lista de estoque.',
                       )
                     : lista.isEmpty
-                    ? const EstadoVazio(
+                    ? EstadoVazio(
                         icone: Icons.search_off,
                         titulo: 'Nenhum produto encontrado',
                         texto: 'Mude a busca ou o filtro.',

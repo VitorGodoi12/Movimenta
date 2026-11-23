@@ -45,12 +45,16 @@ class _ShellScreenState extends State<ShellScreen> {
           index: _indice,
           children: [
             const HomeScreen(),
-            const EstoqueScreen(),
+            const EstoqueScreen(loja: false),
             VendaRapidaScreen(incorporada: true, ativa: _indice == 2),
+            const EstoqueScreen(loja: true),
             const _MaisScreen(),
           ],
         ),
         bottomNavigationBar: NavigationBar(
+          backgroundColor: Colors.white,
+          indicatorColor: AppCores.roxoSuave,
+          height: 74,
           selectedIndex: _indice,
           onDestinationSelected: _ir,
           destinations: const [
@@ -68,6 +72,11 @@ class _ShellScreenState extends State<ShellScreen> {
               icon: _AtalhoLeitor(),
               selectedIcon: _AtalhoLeitor(),
               label: 'Vender',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.storefront_outlined),
+              selectedIcon: Icon(Icons.storefront),
+              label: 'Loja',
             ),
             NavigationDestination(
               icon: Icon(Icons.grid_view_rounded),
