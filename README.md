@@ -46,7 +46,7 @@ A edição Android mostra alertas do estoque local na central de notificações.
 
 ## Stokio 1.5
 
-Estoque no aparelho, com busca, categorias, vendas, alertas Android e backup. O cadastro sugere nome e categoria para 15 códigos do catálogo incluído. No Android, escaneie um código novo ou toque em **Buscar no catálogo online** para consultar o Open Food Facts via HTTPS. A busca envia o código de barras e o identificador do aplicativo. Estoque, preço e validade ficam no aparelho, e o cadastro manual funciona sem rede. Os dados do catálogo vêm do [Open Food Facts](https://world.openfoodfacts.org/) e são fornecidos sob a [ODbL](https://opendatacommons.org/licenses/odbl/1-0/).
+Estoque no aparelho, com busca, categorias, vendas, alertas Android e backup. O cadastro sugere nome e categoria para 15 códigos do catálogo incluído. No Android, escaneie um código novo ou toque em **Buscar no catálogo online** para consultar o Open Food Facts e, se necessário, o [Open Beauty Facts](https://world.openbeautyfacts.org/) via HTTPS. QR Codes GS1 Digital Link são convertidos no GTIN da embalagem. A busca envia o código de barras e o identificador do aplicativo. Estoque, preço e validade ficam no aparelho, e o cadastro manual funciona sem rede. Os dados do catálogo vêm do [Open Food Facts](https://world.openfoodfacts.org/) e são fornecidos sob a [ODbL](https://opendatacommons.org/licenses/odbl/1-0/).
 
 ## Compilar e testar
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:stokio/utils/codigo_produto.dart';
 
 typedef ProdutoCatalogo = ({String nome, String categoria});
 
@@ -10,7 +11,8 @@ class CatalogoLocal {
   static Future<ProdutoCatalogo?> buscar(String codigo) async {
     final valor = codigo.trim();
     if (!RegExp(r'^\d{8,14}$').hasMatch(valor)) return null;
-    return (await (_catalogo ??= _carregar()))[valor];
+    final catalogo = await (_catalogo ??= _carregar());
+    return catalogo[chaveCodigoProduto(valor)];
   }
 
   static Future<Map<String, ProdutoCatalogo>> _carregar() async {
@@ -19,7 +21,7 @@ class CatalogoLocal {
     ) as List;
     return {
       for (final linha in itens.cast<List<dynamic>>())
-        linha[0] as String: (
+        chaveCodigoProduto(linha[0] as String): (
           nome: linha[1] as String,
           categoria: linha[2] as String,
         ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:stokio/theme/app_theme.dart';
+import 'package:stokio/utils/codigo_produto.dart';
+import 'package:stokio/widgets/dialogos.dart';
 
 /// Abre a câmera e devolve o código lido (ou digitado). Nulo se cancelar.
 Future<String?> lerCodigo(BuildContext context) {
@@ -27,6 +29,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     autoZoom: true,
   );
   bool _lido = false;
+  bool _avisouLink = false;
 
   @override
   void dispose() {
@@ -44,11 +47,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
   void _aoDetectar(BarcodeCapture captura) {
     if (!mounted || _lido || ModalRoute.of(context)?.isCurrent != true) return;
     for (final b in captura.barcodes) {
-      final valor = b.rawValue?.trim();
-      if (valor != null && valor.isNotEmpty) {
-        _processar(valor);
+      final codigo = codigoDeProduto(b.rawValue);
+      if (codigo != null) {
+        _processar(codigo);
         return;
       }
+    }
+    if (!_avisouLink &&
+        captura.barcodes.any((b) => b.rawValue?.isNotEmpty == true)) {
+      _avisouLink = true;
+      avisar(
+        context,
+        'QR sem código de produto. Leia as barras ou digite o número da embalagem.',
+      );
     }
   }
 
@@ -58,7 +69,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
       builder: (_) => const _DigitarCodigoDialog(),
     );
     if (codigo != null && codigo.isNotEmpty && mounted) {
-      _processar(codigo);
+      final normalizado = codigoDeProduto(codigo);
+      if (normalizado == null) {
+        avisar(context, 'Digite o código impresso na embalagem.');
+        return;
+      }
+      _processar(normalizado);
     }
   }
 

@@ -1,3 +1,5 @@
+import 'package:stokio/utils/codigo_produto.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -99,7 +101,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
     if (!widget.ativa || !_camera || ModalRoute.of(context)?.isCurrent != true)
       return;
     for (final barcode in captura.barcodes) {
-      final codigo = barcode.rawValue?.trim();
+      final codigo = codigoDeProduto(barcode.rawValue);
       if (codigo == null || codigo.isEmpty || codigo == _ultimoCodigo) continue;
       _ultimoCodigo = codigo;
       final produto = estoque.porCodigo(codigo);
@@ -157,7 +159,12 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
       ),
     );
     if (valor == null || valor.isEmpty || !mounted) return;
-    final produto = estoque.porCodigo(valor);
+    final codigoValido = codigoDeProduto(valor);
+    if (codigoValido == null) {
+      avisar(context, 'Digite o código impresso na embalagem.');
+      return;
+    }
+    final produto = estoque.porCodigo(codigoValido);
     if (produto == null) {
       avisar(context, 'Código não cadastrado.');
       return;

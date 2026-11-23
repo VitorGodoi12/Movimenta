@@ -1,3 +1,5 @@
+import 'package:stokio/utils/codigo_produto.dart';
+
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -106,10 +108,15 @@ class EstoqueService extends ChangeNotifier {
   }
 
   Produto? porCodigo(String codigo) {
-    final c = codigo.trim();
-    if (c.isEmpty) return null;
+    final c = codigoDeProduto(codigo);
+    if (c == null) return null;
     for (final p in _produtos) {
       if (p.codigoBarras == c) return p;
+    }
+    final chave = chaveCodigoProduto(c);
+    for (final p in _produtos) {
+      final salvo = codigoDeProduto(p.codigoBarras);
+      if (salvo != null && chaveCodigoProduto(salvo) == chave) return p;
     }
     return null;
   }

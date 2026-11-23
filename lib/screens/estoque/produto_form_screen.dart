@@ -1,3 +1,4 @@
+import 'package:stokio/utils/codigo_produto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stokio/models/produto.dart';
@@ -36,7 +37,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   String? _marcaCatalogo;
   String? _mensagemConsulta;
   bool _buscandoCatalogo = false;
-  bool _sugestaoOnline = false;
+  String _fonteCatalogo = 'Catálogo local';
   int _consultaCatalogo = 0;
 
   @override
@@ -48,9 +49,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   }
 
   bool get _podeBuscarOnline =>
-      OpenFoodFacts.disponivel &&
-      !_editando &&
-      RegExp(r'^(?:\d{8}|\d{12,14})$').hasMatch(_codigo.text.trim());
+      OpenFoodFacts.disponivel && !_editando && eGtin(_codigo.text.trim());
 
   Future<void> _consultarCatalogo(String codigo, {bool online = false}) async {
     if (_editando) return;
@@ -62,7 +61,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       _sugestaoCatalogo = null;
       _mensagemConsulta = null;
       _marcaCatalogo = null;
-      _sugestaoOnline = false;
+      _fonteCatalogo = 'Catálogo local';
       _buscandoCatalogo = buscarOnline;
     });
 
@@ -93,7 +92,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
             categoria: sugestao.categoria,
           );
           _marcaCatalogo = sugestao.marca;
-          _sugestaoOnline = true;
+          _fonteCatalogo = sugestao.fonte;
         } else {
           _mensagemConsulta =
               'Código sem sugestão. Você pode cadastrar manualmente.';
@@ -205,6 +204,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   String? _validarCodigo(String? v) {
     final c = (v ?? '').trim();
     if (c.isEmpty) return null;
+    if (codigoDeProduto(c) == null) {
+      return 'Use o código da embalagem, sem link.';
+    }
     return estoque.codigoEmUso(c, exceto: widget.produto?.id)
         ? 'Este código já está em outro produto.'
         : null;
@@ -226,7 +228,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     final preco = _lerValor(_preco.text)!;
     final custo = _lerValor(_custo.text) ?? 0.0;
     final minimo = int.parse(_minimo.text.trim());
-    final codigo = _codigo.text.trim().isEmpty ? null : _codigo.text.trim();
+    final codigo = codigoDeProduto(_codigo.text);
     final local = _local.text.trim().isEmpty ? null : _local.text.trim();
 
     final total =
@@ -336,7 +338,16 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ),
                 ),
                 validator: _validarCodigo,
-                onChanged: (codigo) => _consultarCatalogo(codigo),
+                onChanged: (leitura) {
+                  final codigo = codigoDeProduto(leitura);
+                  if (codigo != null && codigo != leitura.trim()) {
+                    _codigo.value = TextEditingValue(
+                      text: codigo,
+                      selection: TextSelection.collapsed(offset: codigo.length),
+                    );
+                  }
+                  _consultarCatalogo(codigo ?? leitura);
+                },
               ),
               if (_buscandoCatalogo)
                 const Padding(
@@ -369,9 +380,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                         [
                           if (_marcaCatalogo != null) _marcaCatalogo!,
                           sugestao.categoria,
-                          _sugestaoOnline
-                              ? 'Open Food Facts'
-                              : 'Catálogo local',
+                          _fonteCatalogo,
                         ].join(' · '),
                       ),
                       trailing: const Icon(Icons.add),
