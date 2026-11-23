@@ -4,6 +4,8 @@ import 'package:stokio/models/produto.dart';
 import 'package:stokio/screens/scanner/scanner_screen.dart';
 import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/services/catalogo_local.dart';
+import 'package:stokio/services/open_food_facts_web.dart'
+    if (dart.library.io) 'package:stokio/services/open_food_facts.dart';
 import 'package:stokio/services/categorias_mercado.dart';
 import 'package:stokio/theme/app_theme.dart';
 import 'package:stokio/widgets/campo_data.dart';
@@ -31,24 +33,79 @@ class ProdutoFormScreen extends StatefulWidget {
 class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   final _chave = GlobalKey<FormState>();
   ProdutoCatalogo? _sugestaoCatalogo;
+  String? _marcaCatalogo;
+  String? _mensagemConsulta;
+  bool _buscandoCatalogo = false;
+  bool _sugestaoOnline = false;
+  int _consultaCatalogo = 0;
 
   @override
   void initState() {
     super.initState();
     if (widget.produto == null && _codigo.text.isNotEmpty) {
-      _consultarCatalogo(_codigo.text);
+      _consultarCatalogo(_codigo.text, online: true);
     }
   }
 
-  Future<void> _consultarCatalogo(String codigo) async {
+  bool get _podeBuscarOnline =>
+      OpenFoodFacts.disponivel &&
+      !_editando &&
+      RegExp(r'^(?:\d{8}|\d{12,14})$').hasMatch(_codigo.text.trim());
+
+  Future<void> _consultarCatalogo(String codigo, {bool online = false}) async {
     if (_editando) return;
+    codigo = codigo.trim();
+    final consulta = ++_consultaCatalogo;
+    final buscarOnline =
+        online && _podeBuscarOnline && estoque.porCodigo(codigo) == null;
+    setState(() {
+      _sugestaoCatalogo = null;
+      _mensagemConsulta = null;
+      _marcaCatalogo = null;
+      _sugestaoOnline = false;
+      _buscandoCatalogo = buscarOnline;
+    });
+
+    ProdutoCatalogo? local;
     try {
-      final produto = await CatalogoLocal.buscar(codigo);
-      if (mounted && _codigo.text.trim() == codigo.trim()) {
-        setState(() => _sugestaoCatalogo = produto);
-      }
+      local = await CatalogoLocal.buscar(codigo);
     } on Exception catch (erro) {
       debugPrint('Catálogo local indisponível: $erro');
+    }
+    if (!mounted || consulta != _consultaCatalogo) return;
+
+    if (local != null || !buscarOnline) {
+      setState(() {
+        _sugestaoCatalogo = local;
+        _buscandoCatalogo = false;
+      });
+      return;
+    }
+
+    try {
+      final sugestao = await OpenFoodFacts.buscar(codigo);
+      if (!mounted || consulta != _consultaCatalogo) return;
+      setState(() {
+        _buscandoCatalogo = false;
+        if (sugestao != null) {
+          _sugestaoCatalogo = (
+            nome: sugestao.nome,
+            categoria: sugestao.categoria,
+          );
+          _marcaCatalogo = sugestao.marca;
+          _sugestaoOnline = true;
+        } else {
+          _mensagemConsulta =
+              'Código sem sugestão. Você pode cadastrar manualmente.';
+        }
+      });
+    } on Exception {
+      if (!mounted || consulta != _consultaCatalogo) return;
+      setState(() {
+        _buscandoCatalogo = false;
+        _mensagemConsulta =
+            'Consulta indisponível. Você pode cadastrar manualmente.';
+      });
     }
   }
 
@@ -160,7 +217,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       _codigo.text = c;
       _sugestaoCatalogo = null;
     });
-    await _consultarCatalogo(c);
+    await _consultarCatalogo(c, online: true);
   }
 
   void _salvar() {
@@ -279,8 +336,26 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ),
                 ),
                 validator: _validarCodigo,
-                onChanged: _consultarCatalogo,
+                onChanged: (codigo) => _consultarCatalogo(codigo),
               ),
+              if (_buscandoCatalogo)
+                const Padding(
+                  padding: EdgeInsets.only(top: 10),
+                  child: LinearProgressIndicator(
+                    semanticsLabel: 'Consultando catálogo',
+                  ),
+                )
+              else if (_podeBuscarOnline && _sugestaoCatalogo == null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () =>
+                        _consultarCatalogo(_codigo.text, online: true),
+                    icon: const Icon(Icons.search),
+                    label: const Text('Buscar no catálogo online'),
+                  ),
+                ),
+              if (_mensagemConsulta != null) Text(_mensagemConsulta!),
               if (_sugestaoCatalogo case final sugestao?)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
@@ -290,7 +365,15 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                     child: ListTile(
                       leading: const Icon(Icons.inventory_2_outlined),
                       title: Text(sugestao.nome),
-                      subtitle: Text('${sugestao.categoria} · catálogo local'),
+                      subtitle: Text(
+                        [
+                          if (_marcaCatalogo != null) _marcaCatalogo!,
+                          sugestao.categoria,
+                          _sugestaoOnline
+                              ? 'Open Food Facts'
+                              : 'Catálogo local',
+                        ].join(' · '),
+                      ),
                       trailing: const Icon(Icons.add),
                       onTap: () => setState(() {
                         _nome.text = sugestao.nome;
