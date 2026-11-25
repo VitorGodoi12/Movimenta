@@ -82,7 +82,9 @@ class ResumoView extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               '$totalSemana unidades no total',
-              style: t.bodySmall?.copyWith(color: AppCores.cinza),
+              style: t.bodySmall?.copyWith(
+                color: context.cores.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             _GraficoSemana(valores: saidas, rotulos: _rotulosSemana()),
@@ -97,7 +99,7 @@ class ResumoView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: perdasQtd > 0
                     ? AppCores.zeradoFundo
-                    : AppCores.roxoSuave,
+                    : context.cores.primaryContainer,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
@@ -117,7 +119,9 @@ class ResumoView extends StatelessWidget {
             if (top.isEmpty)
               Text(
                 'Registre saídas para ver os produtos que mais giram.',
-                style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+                style: t.bodyMedium?.copyWith(
+                  color: context.cores.onSurfaceVariant,
+                ),
               )
             else
               for (final e in top)
@@ -189,7 +193,9 @@ class _GraficoSemana extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       rotulos[i],
-                      style: t.labelSmall?.copyWith(color: AppCores.cinza),
+                      style: t.labelSmall?.copyWith(
+                        color: context.cores.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -243,7 +249,7 @@ class _LinhaRanking extends StatelessWidget {
                 Container(
                   height: 8,
                   decoration: BoxDecoration(
-                    color: AppCores.roxoSuave,
+                    color: context.cores.primaryContainer,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -280,12 +286,15 @@ class _Numero extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppCores.roxoCampo,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppCores.linha),
+        border: Border.all(color: context.cores.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(rotulo, style: t.bodySmall?.copyWith(color: AppCores.cinza)),
+          Text(
+            rotulo,
+            style: t.bodySmall?.copyWith(color: context.cores.onSurfaceVariant),
+          ),
           const SizedBox(height: 4),
           Text(
             valor,
@@ -293,7 +302,12 @@ class _Numero extends StatelessWidget {
           ),
           if (nota != null) ...[
             const SizedBox(height: 4),
-            Text(nota!, style: t.bodySmall?.copyWith(color: AppCores.cinza)),
+            Text(
+              nota!,
+              style: t.bodySmall?.copyWith(
+                color: context.cores.onSurfaceVariant,
+              ),
+            ),
           ],
         ],
       ),

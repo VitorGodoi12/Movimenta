@@ -343,7 +343,32 @@ class EstoqueService extends ChangeNotifier {
           'Há mais de um produto chamado ${item.nome} com a mesma unidade. Revise os cadastros antes de importar.',
         );
       }
-      final anterior = correspondentes?.single;
+      final encontrado = item.codigoBarras == null
+          ? null
+          : porCodigo(item.codigoBarras!);
+      if (encontrado != null && encontrado.unidade != unidade) {
+        throw StateError(
+          'Confira a unidade antes de importar pelo código: ' + item.nome,
+        );
+      }
+      final anterior = encontrado ?? correspondentes?.single;
+      if (encontrado == null &&
+          anterior?.codigoBarras != null &&
+          item.codigoBarras != null) {
+        throw StateError(
+          'Já existe um produto com esse nome e outro código: ' + item.nome,
+        );
+      }
+      if (anterior != null && alteracoes.containsKey(anterior)) {
+        throw StateError(
+          'Há duas contagens para ' + anterior.nome + '. Revise a lista.',
+        );
+      }
+      if (item.codigoBarras case final codigo?) {
+        if (!destinos.add('gtin:' + chaveCodigoProduto(codigo))) {
+          throw StateError('Há duas contagens para o mesmo código de barras.');
+        }
+      }
       final classificar =
           anterior != null && chave != semCategoria && index[chave] == null;
       if (classificar) index.remove(semCategoria);
@@ -352,6 +377,7 @@ class EstoqueService extends ChangeNotifier {
               id: novoId(),
               nome: item.nome,
               categoria: item.categoria,
+              codigoBarras: item.codigoBarras,
               quantidade: quantidade,
               minimo: 0,
               preco: 0,
@@ -359,19 +385,21 @@ class EstoqueService extends ChangeNotifier {
             )
           : Produto.fromJson(anterior.toJson());
       if (classificar) produto.categoria = item.categoria;
+      produto.codigoBarras ??= item.codigoBarras;
       if (item.emEmbalagem && unidade != item.unidade) {
         if (item.unidade == 'cx') produto.unidadesPorCaixa = fator;
         if (item.unidade == 'fardo') produto.unidadesPorFardo = fator;
       }
+      final delta = quantidade - (anterior?.saldoEstoque ?? 0);
       final lotes = anterior == null
           ? produto.lotes
-          : produto.alterarSaldo(quantidade - anterior.quantidade);
+          : produto.alterarSaldo(delta);
       if (anterior == null) {
         novosProdutos.add(produto);
       } else {
+        produto.distribuirSaldo(anterior.saldoLoja);
         alteracoes[anterior] = produto;
       }
-      final delta = quantidade - (anterior?.quantidade ?? 0);
       if (anterior == null || delta != 0) {
         movimentos.add(
           Movimentacao(
@@ -384,6 +412,7 @@ class EstoqueService extends ChangeNotifier {
             delta: delta,
             data: agora,
             motivo: 'Importação de estoque',
+            deltaLoja: 0,
             lotes: lotes,
           ),
         );
@@ -419,7 +448,8 @@ class EstoqueService extends ChangeNotifier {
         ..copiarLotes(novo)
         ..unidadesPorCaixa = novo.unidadesPorCaixa
         ..unidadesPorFardo = novo.unidadesPorFardo
-        ..categoria = novo.categoria;
+        ..categoria = novo.categoria
+        ..codigoBarras = novo.codigoBarras;
     }
     _produtos.addAll(novosProdutos);
     _historico

@@ -117,7 +117,7 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
               CheckboxListTile(
                 value: marcado,
                 activeColor: AppCores.preto,
-                checkColor: AppCores.branco,
+                checkColor: context.cores.surface,
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                 onChanged: (v) => setState(() {
@@ -160,7 +160,9 @@ class _ListaComprasScreenState extends State<ListaComprasScreen> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'A sugestão considera as vendas dos últimos 30 dias, o saldo e o prazo do fornecedor, com reserva de sete dias.',
-                          style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+                          style: t.bodyMedium?.copyWith(
+                            color: context.cores.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),

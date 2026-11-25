@@ -19,7 +19,7 @@ flutter run
 
 ## Importar uma contagem
 
-Na tela **Estoque**, toque em **Importar lista de estoque**, cole o texto e confira a prévia. A importação aceita quantidades em unidades, caixas e fardos, inclui itens zerados e usa a última contagem quando o mesmo produto aparece mais de uma vez. Corrija no texto as linhas sinalizadas sem quantidade. Os produtos ficam agrupados por categoria no estoque.
+Na tela **Estoque**, toque em **Importar lista de estoque**, cole o texto e confira a prévia. A importação aceita quantidades em unidades, caixas e fardos, inclui itens zerados e usa a última contagem quando o mesmo produto aparece mais de uma vez. Na revisão, confirme todos os saldos ou preencha os vazios, inclusive com zero. Use x ou apenas o número para unidades soltas, cx para caixa e fr para fardo. Os produtos ficam agrupados por categoria no estoque.
 
 Ao ler ou digitar um código de barras, o aplicativo abre o produto cadastrado. Se o código ainda estiver livre, escolha entre vincular a um produto sem código e cadastrar um novo.
 
@@ -55,6 +55,12 @@ Em **Operações**, leia um código, cadastre produtos, registre movimentações
 No cadastro, selecione Estoque, Loja ou os dois, preencha as quantidades e digite as datas como DD/MM/AAAA. Para transferir um produto existente, edite a distribuição entre áreas mantendo o total. Escolha a embalagem em que o saldo será contado. O catálogo confirma nomes e códigos no aparelho e, quando disponíveis, apresenta sugestões dos catálogos online para comparação.
 
 Quando um APK Android for atualizado, publique a nova versão com o APK anexado no GitHub Releases.
+
+## Movimenta 1.8.0
+
+Escolha Claro, Escuro ou Seguir o aparelho em **Mais → Configurações e backup → Aparência**. O Histórico permite filtrar por produto e data, e a contagem mostra o progresso da conferência.
+
+No cadastro e na revisão de listas, use a busca pelo nome para conferir sugestões do Open Food Facts. Se escolher uma sugestão na importação, o produto recebe o nome e o código selecionados. Ajuste a contagem antes de confirmar. A busca por nome envia somente a descrição consultada e funciona no Android com internet.
 
 ## Compilar e testar
 

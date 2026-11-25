@@ -10,6 +10,7 @@ import 'package:stokio/services/open_food_facts_web.dart'
 import 'package:stokio/services/categorias_mercado.dart';
 import 'package:stokio/theme/app_theme.dart';
 import 'package:stokio/widgets/campo_data.dart';
+import 'package:stokio/widgets/buscar_catalogo.dart';
 
 /// Cadastro e edição de produto.
 /// Na edição a quantidade não aparece: ela muda por entradas, saídas e ajustes.
@@ -457,7 +458,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Material(
-                    color: AppCores.roxoSuave,
+                    color: context.cores.primaryContainer,
                     borderRadius: BorderRadius.circular(14),
                     child: ListTile(
                       leading: const Icon(Icons.inventory_2_outlined),
@@ -535,9 +536,35 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ],
                 ),
               ],
+              if (buscaCatalogoDisponivel)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.manage_search_outlined),
+                    label: const Text('Buscar produto pelo nome'),
+                    onPressed: () async {
+                      final nome = _nome.text.trim();
+                      if (nome.length < 3) {
+                        _aviso(
+                          'Digite pelo menos três letras no nome do produto.',
+                        );
+                        return;
+                      }
+                      final sugestao = await buscarNoCatalogo(context, nome);
+                      if (sugestao == null || !mounted) return;
+                      _aplicarSugestao((
+                        nome: sugestao.nome,
+                        categoria: sugestao.categoria,
+                      ));
+                      if (_codigo.text.trim().isEmpty)
+                        _codigo.text = sugestao.codigo;
+                    },
+                  ),
+                ),
               titulo('Quantidades e destino'),
               SegmentedButton<bool>(
                 multiSelectionEnabled: true,
+                showSelectedIcon: false,
                 segments: const [
                   ButtonSegment(
                     value: false,
@@ -561,7 +588,15 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
               ),
               const SizedBox(height: 12),
               if (_editando)
-                Text('Saldo total: ' + widget.produto!.quantidade.toString()),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Saldo total: ' + widget.produto!.quantidade.toString(),
+                      style: t.titleLarge,
+                    ),
+                  ),
+                ),
               for (final (area, controle, rotulo) in [
                 (false, _quantidade, 'Quantidade no estoque'),
                 (true, _quantidadeLoja, 'Quantidade na loja'),

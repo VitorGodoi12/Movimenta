@@ -19,7 +19,7 @@ Future<void> mostrarMovimentarSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    backgroundColor: AppCores.branco,
+    backgroundColor: context.cores.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -260,7 +260,9 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
               const SizedBox(height: 6),
               Text(
                 'No sistema agora: ${_produto!.quantidade} ${_produto!.unidade}',
-                style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                style: t.bodySmall?.copyWith(
+                  color: context.cores.onSurfaceVariant,
+                ),
               ),
             ],
             const SizedBox(height: 16),

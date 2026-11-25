@@ -106,7 +106,9 @@ class _BoasVindasScreenState extends State<BoasVindasScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'Seus dados ficam salvos neste aparelho.',
-                          style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+                          style: t.bodyMedium?.copyWith(
+                            color: context.cores.onSurfaceVariant,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         TextFormField(
@@ -171,7 +173,7 @@ class _BarrasDecorativas extends StatelessWidget {
                 child: Container(
                   height: h,
                   decoration: BoxDecoration(
-                    color: AppCores.branco,
+                    color: context.cores.surface,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),

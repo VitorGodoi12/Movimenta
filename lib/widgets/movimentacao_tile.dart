@@ -31,8 +31,8 @@ class MovimentacaoTile extends StatelessWidget {
           Container(
             width: 42,
             height: 42,
-            decoration: const BoxDecoration(
-              color: AppCores.roxoSuave,
+            decoration: BoxDecoration(
+              color: context.cores.primaryContainer,
               shape: BoxShape.circle,
             ),
             child: Icon(icone, size: 20),
@@ -49,7 +49,9 @@ class MovimentacaoTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '$titulo$motivo, ${formatarQuando(mov.data)}',
-                  style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                  style: t.bodySmall?.copyWith(
+                    color: context.cores.onSurfaceVariant,
+                  ),
                 ),
                 if (mov.pagamento case final pagamento?)
                   Text('Pagamento: $pagamento', style: t.bodySmall),

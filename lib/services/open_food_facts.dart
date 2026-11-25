@@ -3,11 +3,71 @@ import 'dart:io';
 
 import 'package:stokio/services/categorias_mercado.dart';
 import 'package:stokio/services/catalogo_local.dart';
+import 'package:stokio/services/sugestao_catalogo.dart';
 import 'package:stokio/utils/codigo_produto.dart';
 
 class OpenFoodFacts {
   static const disponivel = true;
   static const _limite = Duration(seconds: 5);
+  static const _agente =
+      'Movimenta/1.8.0 (https://github.com/VitorGodoi12/Movimenta)';
+  static final _buscasRecentes = <DateTime>[];
+
+  static Future<List<SugestaoCatalogo>> buscarNome(String nome) async {
+    final consulta = nome
+        .replaceAll(RegExp(r'[^\p{L}\p{N}\s,.]', unicode: true), ' ')
+        .trim();
+    if (consulta.length < 3 || consulta.length > 100) return [];
+    final agora = DateTime.now();
+    _buscasRecentes.removeWhere(
+      (data) => agora.difference(data).inSeconds >= 60,
+    );
+    if (_buscasRecentes.length >= 10) {
+      throw const HttpException('Limite de buscas. Aguarde um minuto.');
+    }
+    _buscasRecentes.add(agora);
+    final url = Uri.https('search.openfoodfacts.org', '/search', {
+      'q': consulta,
+      'page_size': '6',
+      'langs': 'pt,en',
+      'fields': 'code,product_name,product_name_pt,quantity',
+    });
+    final cliente = HttpClient()..connectionTimeout = _limite;
+    try {
+      final dados = await _json(cliente, url).timeout(_limite);
+      final hits = dados is Map ? dados['hits'] : null;
+      if (hits is! List) return [];
+      final resultado = <String, SugestaoCatalogo>{};
+      for (final hit in hits.whereType<Map>()) {
+        final codigo = _texto(hit['code']);
+        final nome =
+            _texto(hit['product_name_pt']) ?? _texto(hit['product_name']);
+        if (codigo == null || !eGtin(codigo) || nome == null) continue;
+        resultado.putIfAbsent(
+          chaveCodigoProduto(codigo),
+          () => (
+            codigo: codigo,
+            nome: CatalogoLocal.formatarNome(nome, _texto(hit['quantity'])),
+            categoria: categoriaExibida(nome, 'Outros'),
+          ),
+        );
+      }
+      return resultado.values.toList();
+    } finally {
+      cliente.close(force: true);
+    }
+  }
+
+  static Future<dynamic> _json(HttpClient cliente, Uri url) async {
+    final pedido = await cliente.getUrl(url);
+    pedido.headers.set(HttpHeaders.userAgentHeader, _agente);
+    final resposta = await pedido.close();
+    if (resposta.statusCode == HttpStatus.notFound) return null;
+    if (resposta.statusCode != HttpStatus.ok) {
+      throw HttpException('Catálogo indisponível', uri: url);
+    }
+    return jsonDecode(await resposta.transform(utf8.decoder).join());
+  }
 
   static Future<({String nome, String categoria, String? marca, String fonte})?>
   buscar(String codigo) async {
@@ -47,17 +107,7 @@ class OpenFoodFacts {
 
   static Future<({String nome, String categoria, String? marca, String fonte})?>
   _ler(HttpClient cliente, Uri url, String fonte) async {
-    final pedido = await cliente.getUrl(url);
-    pedido.headers.set(
-      HttpHeaders.userAgentHeader,
-      'Movimenta/1.7.2 (https://github.com/VitorGodoi12/Movimenta)',
-    );
-    final resposta = await pedido.close();
-    if (resposta.statusCode == HttpStatus.notFound) return null;
-    if (resposta.statusCode != HttpStatus.ok) {
-      throw HttpException('Catálogo indisponível', uri: url);
-    }
-    final dados = jsonDecode(await resposta.transform(utf8.decoder).join());
+    final dados = await _json(cliente, url);
     if (dados is! Map || dados['product'] is! Map) return null;
     final produto = dados['product'] as Map;
     final nome =

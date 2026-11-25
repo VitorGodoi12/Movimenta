@@ -1,3 +1,4 @@
+import 'package:stokio/theme/tema_preferencia.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -150,6 +151,39 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: ValueListenableBuilder(
+                valueListenable: TemaPreferencia.modo,
+                builder: (context, modo, _) =>
+                    DropdownButtonFormField<ThemeMode>(
+                      initialValue: modo,
+                      decoration: const InputDecoration(
+                        labelText: 'Aparência',
+                        prefixIcon: Icon(Icons.contrast),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: ThemeMode.system,
+                          child: Text('Seguir o aparelho'),
+                        ),
+                        DropdownMenuItem(
+                          value: ThemeMode.light,
+                          child: Text('Claro'),
+                        ),
+                        DropdownMenuItem(
+                          value: ThemeMode.dark,
+                          child: Text('Escuro'),
+                        ),
+                      ],
+                      onChanged: (novo) {
+                        if (novo != null) TemaPreferencia.definir(novo);
+                      },
+                    ),
+              ),
+            ),
+          ),
           if (Notificacoes.disponivel) ...[
             Text('Notificações no celular', style: titulo),
             opcao(
@@ -176,7 +210,9 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
           const SizedBox(height: 4),
           Text(
             'Quantos dias antes do vencimento o produto entra em alerta.',
-            style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+            style: t.bodyMedium?.copyWith(
+              color: context.cores.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -201,7 +237,9 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
           const SizedBox(height: 4),
           Text(
             'Seus dados ficam só neste aparelho. O backup leva tudo para outro celular.',
-            style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+            style: t.bodyMedium?.copyWith(
+              color: context.cores.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 4),
           opcao(
@@ -259,8 +297,8 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Movimenta 1.7.2',
-            style: t.bodySmall?.copyWith(color: AppCores.cinza),
+            'Movimenta 1.8.0',
+            style: t.bodySmall?.copyWith(color: context.cores.onSurfaceVariant),
           ),
         ],
       ),

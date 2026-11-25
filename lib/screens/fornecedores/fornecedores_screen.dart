@@ -14,7 +14,7 @@ class FornecedoresScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: AppCores.branco,
+      backgroundColor: context.cores.surface,
       builder: (_) => _FornecedorSheet(fornecedor: fornecedor),
     );
   }
@@ -58,11 +58,11 @@ class FornecedoresScreen extends StatelessWidget {
                     final f = lista[i];
                     final qtd = estoque.produtosDoFornecedor(f);
                     return Material(
-                      color: AppCores.branco,
+                      color: context.cores.surface,
                       clipBehavior: Clip.antiAlias,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
-                        side: const BorderSide(color: AppCores.linha),
+                        side: BorderSide(color: context.cores.outlineVariant),
                       ),
                       child: ListTile(
                         onTap: () => _abrirFormulario(context, f),

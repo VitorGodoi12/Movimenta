@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
-/// Paleta do Stokio: roxo claro, branco e preto.
+/// Paleta do Movimenta.
 /// Amarelo e vermelho aparecem só para sinalizar estoque baixo/zerado.
 class AppCores {
   AppCores._();
@@ -26,38 +26,56 @@ class AppCores {
 class AppTheme {
   AppTheme._();
 
-  static ThemeData claro() {
-    final base = ThemeData(useMaterial3: true, brightness: Brightness.light);
+  static ThemeData claro() => _criar(Brightness.light);
+  static ThemeData escuro() => _criar(Brightness.dark);
+
+  static ThemeData _criar(Brightness brilho) {
+    final escuro = brilho == Brightness.dark;
+    final base = ThemeData(useMaterial3: true, brightness: brilho);
+    final fundo = escuro ? const Color(0xFF171320) : AppCores.fundo;
+    final superficie = escuro ? const Color(0xFF241D31) : AppCores.branco;
+    final campo = escuro ? const Color(0xFF302640) : AppCores.roxoCampo;
+    final textoPrincipal = escuro ? const Color(0xFFF5EFFC) : AppCores.preto;
+    final auxiliar = escuro ? const Color(0xFFD1C3E3) : AppCores.cinza;
+    final borda = escuro ? const Color(0xFF554669) : AppCores.linha;
+    final acao = escuro ? const Color(0xFFD4B9FF) : AppCores.roxoAcao;
+    final sobreAcao = escuro ? AppCores.preto : AppCores.branco;
+    final destaque = escuro ? const Color(0xFF3C2B53) : AppCores.roxoSuave;
 
     final esquema =
         ColorScheme.fromSeed(
-          seedColor: AppCores.roxo,
-          brightness: Brightness.light,
+          seedColor: AppCores.roxoForte,
+          brightness: brilho,
         ).copyWith(
-          primary: AppCores.roxo,
-          onPrimary: AppCores.preto,
-          secondary: AppCores.roxo,
-          onSecondary: AppCores.preto,
-          primaryContainer: AppCores.roxoSuave,
-          onPrimaryContainer: AppCores.preto,
-          surface: AppCores.branco,
-          onSurface: AppCores.preto,
-          outline: AppCores.linha,
-          error: AppCores.zerado,
+          primary: acao,
+          onPrimary: sobreAcao,
+          primaryContainer: destaque,
+          onPrimaryContainer: textoPrincipal,
+          surface: superficie,
+          surfaceContainerHighest: campo,
+          onSurface: textoPrincipal,
+          onSurfaceVariant: auxiliar,
+          outlineVariant: borda,
         );
-
     final texto = base.textTheme.apply(
-      bodyColor: AppCores.preto,
-      displayColor: AppCores.preto,
+      bodyColor: textoPrincipal,
+      displayColor: textoPrincipal,
     );
-
     final raio14 = BorderRadius.circular(14);
 
     return base.copyWith(
       colorScheme: esquema,
-      scaffoldBackgroundColor: AppCores.fundo,
+      scaffoldBackgroundColor: fundo,
       textTheme: texto,
-      dividerColor: AppCores.linha,
+      dividerColor: borda,
+      cardTheme: CardThemeData(
+        color: superficie,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: borda),
+        ),
+      ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: CupertinoPageTransitionsBuilder(),
@@ -65,21 +83,21 @@ class AppTheme {
         },
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppCores.fundo,
-        foregroundColor: AppCores.roxoForte,
+        backgroundColor: fundo,
+        foregroundColor: acao,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: texto.titleLarge?.copyWith(
           fontSize: 24,
           fontWeight: FontWeight.w800,
-          color: AppCores.preto,
+          color: textoPrincipal,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppCores.roxoAcao,
-          foregroundColor: AppCores.branco,
+          backgroundColor: acao,
+          foregroundColor: sobreAcao,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(borderRadius: raio14),
           textStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -87,32 +105,32 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppCores.roxoForte,
+          foregroundColor: acao,
           minimumSize: const Size.fromHeight(52),
-          side: const BorderSide(color: AppCores.linha),
+          side: BorderSide(color: borda),
           shape: RoundedRectangleBorder(borderRadius: raio14),
           textStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppCores.roxoForte,
+          foregroundColor: acao,
           textStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppCores.roxoCampo,
+        fillColor: campo,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
-        labelStyle: const TextStyle(color: AppCores.cinza),
-        floatingLabelStyle: const TextStyle(
-          color: AppCores.preto,
+        labelStyle: TextStyle(color: auxiliar),
+        floatingLabelStyle: TextStyle(
+          color: textoPrincipal,
           fontWeight: FontWeight.w600,
         ),
-        hintStyle: const TextStyle(color: AppCores.cinza),
+        hintStyle: TextStyle(color: auxiliar),
         border: OutlineInputBorder(
           borderRadius: raio14,
           borderSide: BorderSide.none,
@@ -123,7 +141,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: raio14,
-          borderSide: const BorderSide(color: AppCores.preto, width: 1.5),
+          borderSide: BorderSide(color: textoPrincipal, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: raio14,
@@ -135,37 +153,35 @@ class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppCores.branco,
+        backgroundColor: superficie,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppCores.roxo,
+        indicatorColor: destaque,
         height: 68,
         labelTextStyle: WidgetStatePropertyAll(
           texto.labelSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
-        iconTheme: const WidgetStatePropertyAll(
-          IconThemeData(color: AppCores.preto),
-        ),
+        iconTheme: WidgetStatePropertyAll(IconThemeData(color: textoPrincipal)),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppCores.branco,
-        selectedColor: AppCores.roxo,
-        side: const BorderSide(color: AppCores.linha),
+        backgroundColor: superficie,
+        selectedColor: destaque,
+        side: BorderSide(color: borda),
         shape: const StadiumBorder(),
         labelStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
-          backgroundColor: AppCores.branco,
-          foregroundColor: AppCores.roxoForte,
-          selectedBackgroundColor: AppCores.roxo,
-          selectedForegroundColor: AppCores.preto,
-          side: const BorderSide(color: AppCores.linha),
+          backgroundColor: superficie,
+          foregroundColor: acao,
+          selectedBackgroundColor: destaque,
+          selectedForegroundColor: textoPrincipal,
+          side: BorderSide(color: borda),
           textStyle: texto.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppCores.roxo,
-        foregroundColor: AppCores.roxoForte,
+        backgroundColor: destaque,
+        foregroundColor: acao,
         elevation: 2,
         extendedTextStyle: texto.labelLarge?.copyWith(
           fontWeight: FontWeight.w700,
@@ -173,11 +189,15 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppCores.preto,
-        contentTextStyle: texto.bodyMedium?.copyWith(color: AppCores.branco),
+        backgroundColor: textoPrincipal,
+        contentTextStyle: texto.bodyMedium?.copyWith(color: fundo),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: raio14),
       ),
     );
   }
+}
+
+extension CoresDoMovimenta on BuildContext {
+  ColorScheme get cores => Theme.of(this).colorScheme;
 }

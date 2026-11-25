@@ -1,6 +1,8 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/services/importacao_estoque.dart';
+import 'package:stokio/widgets/buscar_catalogo.dart';
 
 class ImportarEstoqueScreen extends StatefulWidget {
   const ImportarEstoqueScreen({super.key});
@@ -14,24 +16,58 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
   ListaImportada? _previa;
   bool _salvando = false;
   final _fatores = <String, int>{};
+  final _quantidades = <ItemImportado, int?>{};
+  final _selecionados = <ItemImportado, ItemImportado>{};
 
-  ItemImportado _comFator(ItemImportado item) {
-    final fator = _fatores[item.chave];
+  Future<void> _sugerir(ItemImportado item) async {
+    final sugestao = await buscarNoCatalogo(context, item.nome);
+    if (sugestao == null || !mounted) return;
+    setState(() {
+      _selecionados[item] = item.revisar(
+        nome: sugestao.nome,
+        codigoBarras: sugestao.codigo,
+      );
+    });
+  }
+
+  ItemImportado _revisar(ItemImportado item) {
+    final escolhido = _selecionados[item] ?? item;
+    return _comFator(
+      escolhido.revisar(quantidade: _quantidades[item] ?? item.quantidade),
+      item.chave,
+    );
+  }
+
+  final _campos = <ItemImportado, TextEditingController>{};
+
+  TextEditingController _controlador(ItemImportado item, bool pendente) =>
+      _campos.putIfAbsent(
+        item,
+        () => TextEditingController(
+          text: pendente ? '' : item.quantidade.toString(),
+        ),
+      );
+
+  ItemImportado _comFator(ItemImportado item, String chave) {
+    final fator = _fatores[chave];
     return fator == null ? item : item.comFator(fator);
   }
 
   @override
   void dispose() {
     _texto.dispose();
+    for (final campo in _campos.values) {
+      campo.dispose();
+    }
     super.dispose();
   }
 
-  Future<void> _importar(ListaImportada previa) async {
+  Future<void> _importar(List<ItemImportado> itens) async {
     if (_salvando) return;
     setState(() => _salvando = true);
     try {
-      await estoque.importarContagem(previa.itens.map(_comFator).toList());
-      if (mounted) Navigator.pop(context, previa.itens.length);
+      await estoque.importarContagem(itens.map(_revisar).toList());
+      if (mounted) Navigator.pop(context, itens.length);
     } on StateError catch (erro) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -44,16 +80,23 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
   @override
   Widget build(BuildContext context) {
     final previa = _previa;
+    final itens = [...?previa?.itens, ...?previa?.semQuantidade];
+    final linhaIncompleta =
+        previa != null &&
+        previa.pendencias.length > previa.semQuantidade.length;
+    final faltaQuantidade = itens.any(
+      (item) => _quantidades.containsKey(item) && _quantidades[item] == null,
+    );
     final grupos = <String, List<ItemImportado>>{};
-    for (final item in previa?.itens ?? const <ItemImportado>[]) {
+    for (final item in itens) {
       (grupos[item.categoria] ??= []).add(item);
     }
     final categorias = grupos.keys.toList()..sort();
-    final semConversao =
-        previa?.itens
-            .where((item) => estoque.fatorImportacao(item) == 0)
-            .toList() ??
-        const <ItemImportado>[];
+    final semConversao = itens
+        .where(
+          (item) => estoque.fatorImportacao(_selecionados[item] ?? item) == 0,
+        )
+        .toList();
     final faltaConversao = semConversao.any(
       (item) => !_fatores.containsKey(item.chave),
     );
@@ -81,18 +124,24 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
               FilledButton(
                 onPressed: () {
                   FocusScope.of(context).unfocus();
-                  setState(
-                    () => _previa = interpretarListaEstoque(_texto.text),
-                  );
+                  setState(() {
+                    _previa = interpretarListaEstoque(_texto.text);
+                    _quantidades.clear();
+                    _selecionados.clear();
+                    _fatores.clear();
+                    for (final item in _previa!.semQuantidade) {
+                      _quantidades[item] = null;
+                    }
+                  });
                 },
                 child: const Text('Conferir lista'),
               ),
             ] else ...[
               Text(
-                '${previa.itens.length} produtos em ${categorias.length} categorias',
+                '${itens.length} produtos em ${categorias.length} categorias',
               ),
               const Text(
-                'A lista substitui a contagem dos produtos correspondentes. As embalagens novas são convertidas em unidades.',
+                'A lista atualiza o saldo de Estoque e preserva o saldo de Loja. As embalagens novas são convertidas em unidades.',
               ),
               TextButton(
                 onPressed: _salvando
@@ -141,26 +190,74 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
                       ListTile(title: Text(linha)),
                   ],
                 ),
-              if (previa.pendencias.isNotEmpty)
-                ExpansionTile(
-                  initiallyExpanded: true,
-                  title: Text('${previa.pendencias.length} linhas a revisar'),
-                  subtitle: const Text(
-                    'Essas linhas ficam fora da importação.',
+              if (linhaIncompleta)
+                const ListTile(
+                  leading: Icon(Icons.warning_amber_outlined),
+                  title: Text('Revise as linhas sem nome no texto da lista.'),
+                ),
+              if (faltaQuantidade)
+                const Card(
+                  child: ListTile(
+                    leading: Icon(Icons.edit_note_outlined),
+                    title: Text('Há itens sem quantidade'),
+                    subtitle: Text(
+                      'Preencha todos os campos em branco nos grupos abaixo. Use 0 para itens zerados.',
+                    ),
                   ),
-                  children: [
-                    for (final linha in previa.pendencias)
-                      ListTile(title: Text(linha)),
-                  ],
                 ),
               for (final categoria in categorias)
                 ExpansionTile(
                   title: Text(categoria),
+                  initiallyExpanded: grupos[categoria]!.any(
+                    previa.semQuantidade.contains,
+                  ),
                   children: [
                     for (final item in grupos[categoria]!)
-                      ListTile(
-                        title: Text(item.nome),
-                        trailing: Text('${item.quantidade} ${item.unidade}'),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text((_selecionados[item] ?? item).nome),
+                            if (_selecionados[item]?.codigoBarras
+                                case final codigo?)
+                              Text('Código: ' + codigo),
+                            TextField(
+                              key: ObjectKey(item),
+                              controller: _controlador(
+                                item,
+                                previa.semQuantidade.contains(item),
+                              ),
+                              enabled: !_salvando,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(9),
+                              ],
+                              decoration: InputDecoration(
+                                labelText: switch (item.unidade) {
+                                  'cx' => 'Quantidade de caixas',
+                                  'fardo' => 'Quantidade de fardos',
+                                  _ => 'Quantidade de unidades soltas',
+                                },
+                              ),
+                              onChanged: (texto) => setState(
+                                () => _quantidades[item] = int.tryParse(texto),
+                              ),
+                            ),
+                            if (buscaCatalogoDisponivel)
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: _salvando
+                                      ? null
+                                      : () => _sugerir(item),
+                                  icon: const Icon(Icons.search),
+                                  label: const Text('Buscar sugestão'),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                   ],
                 ),
@@ -172,13 +269,18 @@ class _ImportarEstoqueScreenState extends State<ImportarEstoqueScreen> {
             : SafeArea(
                 minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                 child: FilledButton(
-                  onPressed: _salvando || faltaConversao || previa.itens.isEmpty
+                  onPressed:
+                      _salvando ||
+                          faltaConversao ||
+                          faltaQuantidade ||
+                          linhaIncompleta ||
+                          itens.isEmpty
                       ? null
-                      : () => _importar(previa),
+                      : () => _importar(itens),
                   child: Text(
                     _salvando
                         ? 'Importando…'
-                        : 'Importar ${previa.itens.length} produtos',
+                        : 'Importar ${itens.length} produtos',
                   ),
                 ),
               ),

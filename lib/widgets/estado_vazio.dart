@@ -26,8 +26,8 @@ class EstadoVazio extends StatelessWidget {
             Container(
               width: 64,
               height: 64,
-              decoration: const BoxDecoration(
-                color: AppCores.roxoSuave,
+              decoration: BoxDecoration(
+                color: context.cores.primaryContainer,
                 shape: BoxShape.circle,
               ),
               child: Icon(icone, size: 28),
@@ -41,7 +41,9 @@ class EstadoVazio extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               texto,
-              style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+              style: t.bodyMedium?.copyWith(
+                color: context.cores.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

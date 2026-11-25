@@ -6,6 +6,25 @@ import 'package:stokio/services/importacao_estoque.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('Reconhece x, cx, fr e mantém itens sem quantidade para revisão', () {
+    final lista = interpretarListaEstoque(
+      '3x arroz\n3 cx leite\n3 fr papel\n3 café\nAçúcar',
+    );
+    expect(lista.itens.map((item) => (item.quantidade, item.unidade)), [
+      (3, 'un'),
+      (3, 'cx'),
+      (3, 'fardo'),
+      (3, 'un'),
+    ]);
+    expect(lista.semQuantidade.single.nome, 'Açúcar');
+    final escolhido = lista.semQuantidade.single.revisar(
+      quantidade: 0,
+      codigoBarras: '7894900010015',
+    );
+    expect(escolhido.quantidade, 0);
+    expect(escolhido.codigoBarras, '7894900010015');
+  });
+
   test('Mantém itens de mesmo nome em categorias diferentes', () {
     final lista = interpretarListaEstoque(
       '{ Bebidas }\n1 X Laranja\n{ Hortifruti }\n5 X Laranja',
@@ -102,6 +121,7 @@ NAO TEM NADA
           nome: 'Itaipava 350',
           categoria: 'Bebidas',
           quantidade: 10,
+          saldoLoja: 3,
           minimo: 2,
           preco: 5,
           codigoBarras: '7891234567890',
@@ -128,7 +148,9 @@ NAO TEM NADA
       expect(recarregado.produtos, hasLength(2));
       expect(recarregado.historico, hasLength(3));
       expect(produto?.id, 'cadastrado');
-      expect(produto?.quantidade, 0);
+      expect(produto?.quantidade, 3);
+      expect(produto?.saldoEstoque, 0);
+      expect(produto?.saldoLoja, 3);
       expect(produto?.preco, 5);
       expect(produto?.minimo, 2);
     },

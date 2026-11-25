@@ -5,6 +5,7 @@ import 'package:stokio/screens/scanner/scanner_screen.dart';
 import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/theme/app_theme.dart';
 import 'package:stokio/widgets/dialogos.dart';
+import 'package:stokio/widgets/cartao_painel.dart';
 import 'package:stokio/widgets/estado_vazio.dart';
 
 /// Conferência do estoque: digite a contagem real de cada produto
@@ -113,6 +114,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
         )
         .toList();
     final qtdDiferencas = _diferencas.length;
+    final contados = _campos.values
+        .where((c) => int.tryParse(c.text.trim()) != null)
+        .length;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Inventário')),
@@ -129,9 +133,28 @@ class _InventarioScreenState extends State<InventarioScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      CartaoPainel(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Andamento da contagem', style: t.titleMedium),
+                            const SizedBox(height: 12),
+                            LinearProgressIndicator(
+                              value: contados / _produtos.length,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '$contados de ${_produtos.length} produtos · $qtdDiferencas divergências',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Text(
                         'Digite quantas unidades existem de verdade. Deixe em branco o que não contou.',
-                        style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+                        style: t.bodyMedium?.copyWith(
+                          color: context.cores.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -155,7 +178,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: lista.length,
                     separatorBuilder: (_, __) =>
-                        const Divider(height: 1, color: AppCores.linha),
+                        Divider(height: 1, color: context.cores.outlineVariant),
                     itemBuilder: (context, i) {
                       final p = lista[i];
                       final local = (p.local ?? '').trim();
@@ -177,7 +200,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                                   Text(
                                     'No sistema: ${p.quantidade} ${p.unidade}${local.isEmpty ? '' : ', $local'}',
                                     style: t.bodySmall?.copyWith(
-                                      color: AppCores.cinza,
+                                      color: context.cores.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -210,9 +233,11 @@ class _InventarioScreenState extends State<InventarioScreen> {
                   ),
                 ),
                 Container(
-                  decoration: const BoxDecoration(
-                    color: AppCores.branco,
-                    border: Border(top: BorderSide(color: AppCores.linha)),
+                  decoration: BoxDecoration(
+                    color: context.cores.surface,
+                    border: Border(
+                      top: BorderSide(color: context.cores.outlineVariant),
+                    ),
                   ),
                   child: SafeArea(
                     top: false,

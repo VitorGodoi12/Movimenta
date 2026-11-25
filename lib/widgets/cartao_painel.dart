@@ -14,9 +14,9 @@ class CartaoPainel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: AppCores.branco,
+    color: context.cores.surface,
     shape: RoundedRectangleBorder(
-      side: const BorderSide(color: AppCores.linha),
+      side: BorderSide(color: context.cores.outlineVariant),
       borderRadius: BorderRadius.circular(22),
     ),
     clipBehavior: Clip.antiAlias,
@@ -55,7 +55,7 @@ class GraficoPainel extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i == valores.length - 1
                         ? AppCores.roxoAcao
-                        : AppCores.roxoSuave,
+                        : context.cores.primaryContainer,
                     borderRadius: BorderRadius.circular(7),
                   ),
                 ),

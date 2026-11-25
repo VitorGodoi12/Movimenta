@@ -62,7 +62,9 @@ class PerfilScreen extends StatelessWidget {
                         if ((cliente?.email ?? '').isNotEmpty)
                           Text(
                             cliente!.email,
-                            style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                            style: t.bodySmall?.copyWith(
+                              color: context.cores.onSurfaceVariant,
+                            ),
                           ),
                       ],
                     ),
@@ -120,7 +122,9 @@ class PerfilScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Seus dados ficam salvos neste aparelho. Faça um backup em Configurações para não perdê-los se trocar de celular.',
-                style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                style: t.bodySmall?.copyWith(
+                  color: context.cores.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -134,7 +138,7 @@ class PerfilScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: AppCores.branco,
+      backgroundColor: context.cores.surface,
       builder: (_) => const _EditarPerfilSheet(),
     );
   }
@@ -246,11 +250,11 @@ class _Opcao extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: AppCores.branco,
+        color: context.cores.surface,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppCores.linha),
+          side: BorderSide(color: context.cores.outlineVariant),
         ),
         child: ListTile(
           onTap: onTap,

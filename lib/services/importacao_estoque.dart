@@ -5,6 +5,7 @@ class ItemImportado {
     this.quantidade,
     this.unidade, {
     this.unidadesPorEmbalagem,
+    this.codigoBarras,
   });
 
   final String nome;
@@ -12,6 +13,20 @@ class ItemImportado {
   final int quantidade;
   final String unidade;
   final int? unidadesPorEmbalagem;
+  final String? codigoBarras;
+
+  ItemImportado revisar({
+    int? quantidade,
+    String? nome,
+    String? codigoBarras,
+  }) => ItemImportado(
+    nome ?? this.nome,
+    categoria,
+    quantidade ?? this.quantidade,
+    unidade,
+    unidadesPorEmbalagem: unidadesPorEmbalagem,
+    codigoBarras: codigoBarras ?? this.codigoBarras,
+  );
 
   bool get emEmbalagem => unidade == 'cx' || unidade == 'fardo';
 
@@ -21,17 +36,24 @@ class ItemImportado {
     quantidade,
     unidade,
     unidadesPorEmbalagem: fator,
+    codigoBarras: codigoBarras,
   );
 
   String get chave => chaveProdutoImportado(nome, unidade, categoria);
 }
 
 class ListaImportada {
-  const ListaImportada(this.itens, this.pendencias, this.repetidos);
+  const ListaImportada(
+    this.itens,
+    this.pendencias,
+    this.repetidos, {
+    this.semQuantidade = const [],
+  });
 
   final List<ItemImportado> itens;
   final List<String> pendencias;
   final List<String> repetidos;
+  final List<ItemImportado> semQuantidade;
 }
 
 String _normalizar(String texto) {
@@ -114,12 +136,13 @@ ListaImportada interpretarListaEstoque(String texto) {
   final itens = <String, ItemImportado>{};
   final pendencias = <String>[];
   final repetidos = <String>[];
+  final semQuantidade = <ItemImportado>[];
   String? categoria;
   String? marca;
   String? volumeAgua;
   var emAguas = false;
   final linhaItem = RegExp(
-    r'^(\d+|o(?=\s*[x×]))(?:\s*[x×]\s+|\s+)(?:(cx|caixas?|fardos?|un)\s+)?(.+)$',
+    r'^(\d+|o(?=\s*[x×]))(?:\s*[x×]\s*|\s+|(?=(?:cx|caixas?|fr|fardos?|un)\s))(?:(cx|caixas?|fr|fardos?|un)\s+)?(.+)$',
     caseSensitive: false,
   );
   final volume = RegExp(
@@ -172,12 +195,20 @@ ListaImportada interpretarListaEstoque(String texto) {
         ? 0
         : int.tryParse(quantidadeBruta ?? '');
     if (campos == null || quantidade == null || quantidade > 999999999) {
+      semQuantidade.add(
+        ItemImportado(
+          campos?[3]?.trim() ?? linha,
+          categoria ?? _categoriaDoNome(normalizado) ?? 'Outros',
+          0,
+          'un',
+        ),
+      );
       pendencias.add(linha);
       continue;
     }
     var nome = campos[3]!.trim();
     if (RegExp(
-      r'^(?:x|×|cx|caixas?|fardos?|un)?$',
+      r'^(?:x|×|cx|caixas?|fr|fardos?|un)?$',
       caseSensitive: false,
     ).hasMatch(nome)) {
       pendencias.add(linha);
@@ -186,7 +217,7 @@ ListaImportada interpretarListaEstoque(String texto) {
 
     final embalagem = switch (_normalizar(campos[2] ?? '')) {
       'cx' || 'caixa' || 'caixas' => 'cx',
-      'fardo' || 'fardos' => 'fardo',
+      'fr' || 'fardo' || 'fardos' => 'fardo',
       _ => 'un',
     };
     if (_normalizar(nome) == 'zero alcool it') nome = 'Itaipava sem álcool';
@@ -209,5 +240,10 @@ ListaImportada interpretarListaEstoque(String texto) {
     }
     itens[item.chave] = item;
   }
-  return ListaImportada(itens.values.toList(), pendencias, repetidos);
+  return ListaImportada(
+    itens.values.toList(),
+    pendencias,
+    repetidos,
+    semQuantidade: semQuantidade,
+  );
 }

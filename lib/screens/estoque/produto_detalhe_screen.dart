@@ -95,14 +95,16 @@ class ProdutoDetalheScreen extends StatelessWidget {
                 local.isEmpty
                     ? produto.categoria
                     : '${produto.categoria}, $local',
-                style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+                style: t.bodyMedium?.copyWith(
+                  color: context.cores.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 20),
               Aparecer(
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppCores.roxoSuave,
+                    color: context.cores.primaryContainer,
                     borderRadius: BorderRadius.circular(28),
                   ),
                   child: Column(
@@ -135,7 +137,9 @@ class ProdutoDetalheScreen extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'O traço preto marca o mínimo: ${produto.minimo} ${produto.unidade}',
-                        style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                        style: t.bodySmall?.copyWith(
+                          color: context.cores.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -259,7 +263,9 @@ class ProdutoDetalheScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Text(
                     'Nenhuma movimentação ainda. Registre uma entrada ou saída.',
-                    style: t.bodyMedium?.copyWith(color: AppCores.cinza),
+                    style: t.bodyMedium?.copyWith(
+                      color: context.cores.onSurfaceVariant,
+                    ),
                   ),
                 )
               else
@@ -284,13 +290,18 @@ class _Linha extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppCores.linha)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: context.cores.outlineVariant)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(rotulo, style: t.bodyMedium?.copyWith(color: AppCores.cinza)),
+          Text(
+            rotulo,
+            style: t.bodyMedium?.copyWith(
+              color: context.cores.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             valor,

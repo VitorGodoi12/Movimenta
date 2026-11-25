@@ -216,9 +216,11 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          selectedColor: AppCores.preto,
+                          selectedColor: context.cores.primary,
                           labelStyle: TextStyle(
-                            color: _filtro == f ? Colors.white : AppCores.preto,
+                            color: _filtro == f
+                                ? context.cores.onPrimary
+                                : context.cores.onSurface,
                             fontWeight: FontWeight.w700,
                           ),
                           label: Text(switch (f) {
@@ -285,9 +287,9 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                                 contentPadding: EdgeInsets.zero,
                                 title: Text(
                                   categoria,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w800,
-                                    color: AppCores.cinza,
+                                    color: context.cores.onSurfaceVariant,
                                   ),
                                 ),
                                 trailing: Icon(

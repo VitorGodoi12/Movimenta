@@ -1,3 +1,4 @@
+import 'package:stokio/widgets/campo_data.dart';
 import 'package:flutter/material.dart';
 import 'package:stokio/models/movimentacao.dart';
 import 'package:stokio/screens/historico/resumo_view.dart';
@@ -28,12 +29,12 @@ class HistoricoScreen extends StatelessWidget {
               ),
             ),
           ],
-          bottom: const TabBar(
-            labelColor: AppCores.preto,
-            unselectedLabelColor: AppCores.cinza,
+          bottom: TabBar(
+            labelColor: context.cores.onSurface,
+            unselectedLabelColor: context.cores.onSurfaceVariant,
             indicatorColor: AppCores.roxo,
             indicatorWeight: 3,
-            dividerColor: AppCores.linha,
+            dividerColor: context.cores.outlineVariant,
             labelStyle: TextStyle(fontWeight: FontWeight.w700),
             tabs: [
               Tab(text: 'Movimentações'),
@@ -58,6 +59,8 @@ class _ListaMovimentacoes extends StatefulWidget {
 
 class _ListaMovimentacoesState extends State<_ListaMovimentacoes> {
   _FiltroMov _filtro = _FiltroMov.todas;
+  String _busca = '';
+  DateTime? _dia;
 
   String _rotulo(_FiltroMov f) => switch (f) {
     _FiltroMov.todas => 'Todas',
@@ -82,7 +85,14 @@ class _ListaMovimentacoesState extends State<_ListaMovimentacoes> {
       listenable: estoque,
       builder: (context, _) {
         final todas = estoque.historico;
-        final lista = todas.where(_passa).toList();
+        final lista = todas
+            .where(
+              (m) =>
+                  _passa(m) &&
+                  m.produtoNome.toLowerCase().contains(_busca) &&
+                  (_dia == null || DateUtils.isSameDay(m.data, _dia)),
+            )
+            .toList();
 
         // Mistura títulos de dia (String) e movimentações.
         final itens = <Object>[];
@@ -98,6 +108,27 @@ class _ListaMovimentacoesState extends State<_ListaMovimentacoes> {
 
         return Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Column(
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search),
+                      labelText: 'Buscar movimentação por produto',
+                    ),
+                    onChanged: (texto) =>
+                        setState(() => _busca = texto.trim().toLowerCase()),
+                  ),
+                  const SizedBox(height: 8),
+                  CampoData(
+                    rotulo: 'Filtrar por data',
+                    valor: _dia,
+                    aoMudar: (data) => setState(() => _dia = data),
+                  ),
+                ],
+              ),
+            ),
             SizedBox(
               height: 56,
               child: ListView(
@@ -145,7 +176,7 @@ class _ListaMovimentacoesState extends State<_ListaMovimentacoes> {
                               item,
                               style: t.labelLarge?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: AppCores.cinza,
+                                color: context.cores.onSurfaceVariant,
                               ),
                             ),
                           );

@@ -65,14 +65,14 @@ class ProdutoTile extends StatelessWidget {
                 height: 40,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppCores.roxoSuave,
+                  color: context.cores.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   inicial,
                   style: t.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: AppCores.roxoForte,
+                    color: context.cores.primary,
                   ),
                 ),
               ),
@@ -91,7 +91,9 @@ class ProdutoTile extends StatelessWidget {
                       validade == null
                           ? detalhe
                           : 'Vence ${formatarData(validade)}',
-                      style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                      style: t.bodySmall?.copyWith(
+                        color: context.cores.onSurfaceVariant,
+                      ),
                     ),
                     if (produto.minimo > 0) ...[
                       const SizedBox(height: 5),
@@ -101,7 +103,7 @@ class ProdutoTile extends StatelessWidget {
                           1.0,
                         ),
                         borderRadius: BorderRadius.circular(8),
-                        backgroundColor: AppCores.fundo,
+                        backgroundColor: context.cores.surfaceContainerHighest,
                         color: produto.situacao == SituacaoEstoque.baixo
                             ? AppCores.baixo
                             : cor,
@@ -132,11 +134,11 @@ class ProdutoTile extends StatelessWidget {
     }
 
     return Material(
-      color: AppCores.branco,
+      color: context.cores.surface,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AppCores.linha),
+        side: BorderSide(color: context.cores.outlineVariant),
       ),
       child: InkWell(
         onTap: onTap,
@@ -178,7 +180,9 @@ class ProdutoTile extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           detalhe,
-                          style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                          style: t.bodySmall?.copyWith(
+                            color: context.cores.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -206,16 +210,18 @@ class ProdutoTile extends StatelessWidget {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.event_outlined,
                       size: 16,
-                      color: AppCores.cinza,
+                      color: context.cores.onSurfaceVariant,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'Validade ${formatarData(validade)}',
-                        style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                        style: t.bodySmall?.copyWith(
+                          color: context.cores.onSurfaceVariant,
+                        ),
                       ),
                     ),
                     SeloValidade(

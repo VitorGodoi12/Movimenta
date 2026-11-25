@@ -51,38 +51,47 @@ class _ShellScreenState extends State<ShellScreen> {
             const _MaisScreen(),
           ],
         ),
-        bottomNavigationBar: NavigationBar(
-          backgroundColor: Colors.white,
-          indicatorColor: AppCores.roxoSuave,
-          height: 74,
-          selectedIndex: _indice,
-          onDestinationSelected: _ir,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Início',
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: NavigationBar(
+                backgroundColor: context.cores.surface,
+                indicatorColor: context.cores.primaryContainer,
+                height: 74,
+                selectedIndex: _indice,
+                onDestinationSelected: _ir,
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home),
+                    label: 'Início',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.inventory_2_outlined),
+                    selectedIcon: Icon(Icons.inventory_2),
+                    label: 'Estoque',
+                  ),
+                  NavigationDestination(
+                    icon: _AtalhoLeitor(),
+                    selectedIcon: _AtalhoLeitor(),
+                    label: 'Operações',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.storefront_outlined),
+                    selectedIcon: Icon(Icons.storefront),
+                    label: 'Loja',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.grid_view_rounded),
+                    label: 'Mais',
+                  ),
+                ],
+              ),
             ),
-            NavigationDestination(
-              icon: Icon(Icons.inventory_2_outlined),
-              selectedIcon: Icon(Icons.inventory_2),
-              label: 'Estoque',
-            ),
-            NavigationDestination(
-              icon: _AtalhoLeitor(),
-              selectedIcon: _AtalhoLeitor(),
-              label: 'Operações',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.storefront_outlined),
-              selectedIcon: Icon(Icons.storefront),
-              label: 'Loja',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.grid_view_rounded),
-              label: 'Mais',
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -206,7 +215,7 @@ class _MaisScreen extends StatelessWidget {
                     if (i > 0)
                       const Divider(height: 1, indent: 16, endIndent: 16),
                     ListTile(
-                      leading: Icon(icone, color: AppCores.roxoForte),
+                      leading: Icon(icone, color: context.cores.primary),
                       title: Text(titulo),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push<void>(
@@ -217,9 +226,9 @@ class _MaisScreen extends StatelessWidget {
                   ],
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   ListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.table_chart_outlined,
-                      color: AppCores.roxoForte,
+                      color: context.cores.primary,
                     ),
                     title: const Text('Exportar CSV'),
                     trailing: const Icon(Icons.chevron_right),
@@ -257,14 +266,16 @@ class _MaisScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppCores.roxoSuave,
+                color: context.cores.primaryContainer,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
                 perfil.ultimoBackup == null
                     ? 'Estoque local salvo neste aparelho. Nenhum backup registrado.'
                     : 'Estoque local salvo neste aparelho. Último backup em ${formatarData(perfil.ultimoBackup!)}.',
-                style: t.bodyMedium?.copyWith(color: AppCores.roxoForte),
+                style: t.bodyMedium?.copyWith(
+                  color: context.cores.onPrimaryContainer,
+                ),
               ),
             ),
           ],

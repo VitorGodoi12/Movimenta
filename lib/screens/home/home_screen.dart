@@ -52,10 +52,10 @@ class HomeScreen extends StatelessWidget {
                       ),
                       child: Text(
                         nome.isEmpty
-                            ? 'S'
+                            ? 'M'
                             : nome.characters.first.toUpperCase(),
                         style: t.titleLarge?.copyWith(
-                          color: AppCores.roxoForte,
+                          color: context.cores.primary,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -67,7 +67,9 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           Text(
                             descricaoHoje(),
-                            style: t.bodySmall?.copyWith(color: AppCores.cinza),
+                            style: t.bodySmall?.copyWith(
+                              color: context.cores.onSurfaceVariant,
+                            ),
                           ),
                           Text(
                             nome.isEmpty ? 'Olá!' : 'Olá, $nome',
@@ -156,6 +158,11 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: 12),
+                Text(
+                  'Ações rápidas',
+                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     for (final (i, (nome, acao)) in <(String, VoidCallback)>[
@@ -197,7 +204,9 @@ class HomeScreen extends StatelessWidget {
                         context,
                         'Validade · ${perfil.diasAvisoValidade} dias',
                         validade,
-                        const Color(0xFF8A5700),
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppCores.baixo
+                            : const Color(0xFF8A5700),
                         FiltroEstoque.vencendo,
                       ),
                     ),
@@ -372,7 +381,7 @@ class HomeScreen extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: (produto.quantidade / minimo).clamp(0.0, 1.0),
                   borderRadius: BorderRadius.circular(10),
-                  backgroundColor: AppCores.fundo,
+                  backgroundColor: context.cores.surfaceContainerHighest,
                   color: produto.quantidade == 0
                       ? AppCores.zerado
                       : AppCores.baixo,

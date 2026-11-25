@@ -124,7 +124,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: AppCores.branco,
+      backgroundColor: context.cores.surface,
       builder: (_) => const _SeletorProduto(),
     );
     if (p == null || !mounted) return;
@@ -327,9 +327,11 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                       return Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: AppCores.branco,
+                          color: context.cores.surface,
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: AppCores.linha),
+                          border: Border.all(
+                            color: context.cores.outlineVariant,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -352,7 +354,7 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                                   Text(
                                     '${formatarPreco(item.produto.preco)} cada',
                                     style: t.bodySmall?.copyWith(
-                                      color: AppCores.cinza,
+                                      color: context.cores.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -385,9 +387,11 @@ class _VendaRapidaScreenState extends State<VendaRapidaScreen> {
                   ),
           ),
           Container(
-            decoration: const BoxDecoration(
-              color: AppCores.branco,
-              border: Border(top: BorderSide(color: AppCores.linha)),
+            decoration: BoxDecoration(
+              color: context.cores.surface,
+              border: Border(
+                top: BorderSide(color: context.cores.outlineVariant),
+              ),
             ),
             child: SafeArea(
               top: false,
