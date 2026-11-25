@@ -25,6 +25,7 @@ class Movimentacao {
     required this.data,
     this.motivo,
     this.pagamento,
+    this.deltaLoja,
     this.lotes = const {},
   });
 
@@ -38,6 +39,7 @@ class Movimentacao {
   final DateTime data;
   final String? motivo;
   final String? pagamento;
+  final int? deltaLoja;
   final Map<DateTime?, int> lotes;
 
   Map<String, dynamic> toJson() => {
@@ -49,6 +51,7 @@ class Movimentacao {
     'data': data.toIso8601String(),
     'motivo': motivo,
     'pagamento': pagamento,
+    'deltaLoja': deltaLoja,
     'lotes': [
       for (final MapEntry(key: data, value: qtd) in lotes.entries)
         {'validade': data?.toIso8601String(), 'delta': qtd},
@@ -64,6 +67,7 @@ class Movimentacao {
     data: DateTime.parse(j['data'] as String),
     motivo: j['motivo'] as String?,
     pagamento: j['pagamento'] as String?,
+    deltaLoja: (j['deltaLoja'] as num?)?.toInt(),
     lotes: {
       for (final lote in (j['lotes'] as List?) ?? const [])
         (lote['validade'] == null

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:stokio/services/categorias_mercado.dart';
+import 'package:stokio/services/catalogo_local.dart';
 import 'package:stokio/utils/codigo_produto.dart';
 
 class OpenFoodFacts {
@@ -34,7 +35,7 @@ class OpenFoodFacts {
   static Future<({String nome, String categoria, String? marca, String fonte})?>
   _buscarNoCatalogo(String codigo, String host, String fonte) async {
     final url = Uri.https(host, '/api/v2/product/$codigo', {
-      'fields': 'product_name_pt,product_name,brands,categories_tags',
+      'fields': 'product_name_pt,product_name,brands,categories_tags,quantity',
     });
     final cliente = HttpClient()..connectionTimeout = _limite;
     try {
@@ -49,7 +50,7 @@ class OpenFoodFacts {
     final pedido = await cliente.getUrl(url);
     pedido.headers.set(
       HttpHeaders.userAgentHeader,
-      'Stokio/1.7.1 (https://github.com/VitorGodoi12/Stokio)',
+      'Movimenta/1.7.2 (https://github.com/VitorGodoi12/Movimenta)',
     );
     final resposta = await pedido.close();
     if (resposta.statusCode == HttpStatus.notFound) return null;
@@ -84,7 +85,7 @@ class OpenFoodFacts {
     };
     final tag = correspondencias.keys.where(categorias.contains).firstOrNull;
     return (
-      nome: nome,
+      nome: CatalogoLocal.formatarNome(nome, _texto(produto['quantity'])),
       marca: _texto(produto['brands']),
       categoria:
           correspondencias[tag] ??

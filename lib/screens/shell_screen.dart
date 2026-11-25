@@ -9,7 +9,7 @@ import 'package:stokio/screens/historico/historico_screen.dart';
 import 'package:stokio/screens/home/home_screen.dart';
 import 'package:stokio/screens/inventario/inventario_screen.dart';
 import 'package:stokio/screens/perfil/perfil_screen.dart';
-import 'package:stokio/screens/venda/venda_rapida_screen.dart';
+import 'package:stokio/screens/operacoes_screen.dart';
 import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/services/exportacao_service.dart';
 import 'package:stokio/services/perfil_service.dart';
@@ -44,9 +44,9 @@ class _ShellScreenState extends State<ShellScreen> {
         body: IndexedStack(
           index: _indice,
           children: [
-            const HomeScreen(),
+            HomeScreen(abrirAba: _ir),
             const EstoqueScreen(loja: false),
-            VendaRapidaScreen(incorporada: true, ativa: _indice == 2),
+            const OperacoesScreen(),
             const EstoqueScreen(loja: true),
             const _MaisScreen(),
           ],
@@ -71,7 +71,7 @@ class _ShellScreenState extends State<ShellScreen> {
             NavigationDestination(
               icon: _AtalhoLeitor(),
               selectedIcon: _AtalhoLeitor(),
-              label: 'Vender',
+              label: 'Operações',
             ),
             NavigationDestination(
               icon: Icon(Icons.storefront_outlined),

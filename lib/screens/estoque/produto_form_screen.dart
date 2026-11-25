@@ -34,6 +34,7 @@ class ProdutoFormScreen extends StatefulWidget {
 class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   final _chave = GlobalKey<FormState>();
   ProdutoCatalogo? _sugestaoCatalogo;
+  ProdutoCatalogo? _sugestaoLocal;
   String? _marcaCatalogo;
   String? _mensagemConsulta;
   bool _buscandoCatalogo = false;
@@ -59,6 +60,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         online && _podeBuscarOnline && estoque.porCodigo(codigo) == null;
     setState(() {
       _sugestaoCatalogo = null;
+      _sugestaoLocal = null;
       _mensagemConsulta = null;
       _marcaCatalogo = null;
       _fonteCatalogo = 'Catálogo local';
@@ -73,7 +75,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     }
     if (!mounted || consulta != _consultaCatalogo) return;
 
-    if (local != null || !buscarOnline) {
+    if (!buscarOnline) {
       setState(() {
         _sugestaoCatalogo = local;
         _buscandoCatalogo = false;
@@ -81,6 +83,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       return;
     }
 
+    setState(() => _sugestaoLocal = local);
     try {
       final sugestao = await OpenFoodFacts.buscar(codigo);
       if (!mounted || consulta != _consultaCatalogo) return;
@@ -93,7 +96,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
           );
           _marcaCatalogo = sugestao.marca;
           _fonteCatalogo = sugestao.fonte;
-        } else {
+        } else if (local == null) {
           _mensagemConsulta =
               'Código sem sugestão. Você pode cadastrar manualmente.';
         }
@@ -118,7 +121,14 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   late final _codigo = TextEditingController(
     text: widget.codigoInicial ?? widget.produto?.codigoBarras ?? '',
   );
-  late final _quantidade = TextEditingController();
+  late final _quantidade = TextEditingController(
+    text: widget.produto?.saldoEstoque.toString(),
+  );
+  late final _quantidadeLoja = TextEditingController(
+    text: widget.produto?.saldoLoja.toString(),
+  );
+  DateTime? _validadeInicial;
+  bool _semValidade = false;
   late final _minimo = TextEditingController(
     text: widget.produto == null ? '' : '${widget.produto!.minimo}',
   );
@@ -151,7 +161,17 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         : null;
   }
 
-  late bool _naLoja = widget.produto?.naLoja ?? widget.lojaInicial;
+  late Set<bool> _areas = {
+    if (widget.produto == null
+        ? !widget.lojaInicial
+        : widget.produto!.saldoEstoque > 0 || !widget.produto!.naLoja)
+      false,
+    if (widget.produto == null
+        ? widget.lojaInicial
+        : widget.produto!.saldoLoja > 0 ||
+              widget.produto!.naLoja && widget.produto!.quantidade == 0)
+      true,
+  };
   late final _lotes = [
     for (final lote in (widget.produto?.lotes ?? <DateTime?, int>{}).entries)
       if (lote.key != null) _LoteEditavel(lote.key, lote.value),
@@ -167,6 +187,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       _categoria,
       _codigo,
       _quantidade,
+      _quantidadeLoja,
       _minimo,
       _unidade,
       _caixa,
@@ -218,8 +239,22 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     setState(() {
       _codigo.text = c;
       _sugestaoCatalogo = null;
+      _sugestaoLocal = null;
     });
     await _consultarCatalogo(c, online: true);
+  }
+
+  void _aplicarSugestao(ProdutoCatalogo sugestao) {
+    setState(() {
+      _nome.text = CatalogoLocal.formatarNome(sugestao.nome);
+      _categoria.text = sugestao.categoria;
+      _sugestaoLocal = null;
+      _sugestaoCatalogo = null;
+    });
+  }
+
+  void _aviso(String texto) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 
   void _salvar() {
@@ -231,9 +266,21 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     final codigo = codigoDeProduto(_codigo.text);
     final local = _local.text.trim().isEmpty ? null : _local.text.trim();
 
-    final total =
-        widget.produto?.quantidade ?? int.tryParse(_quantidade.text.trim());
-    if (total == null) return;
+    final naLoja = _areas.contains(true);
+    final noEstoque = _areas.contains(false);
+    final saldoLoja = naLoja ? int.parse(_quantidadeLoja.text.trim()) : 0;
+    final saldoEstoque = noEstoque ? int.parse(_quantidade.text.trim()) : 0;
+    final total = saldoLoja + saldoEstoque;
+    if (_editando && total != widget.produto!.quantidade) {
+      _aviso(
+        'Mantenha o saldo total para transferir. Use Entrada ou Saída para mudar a quantidade.',
+      );
+      return;
+    }
+    if (!_editando && !_semValidade && _validadeInicial == null) {
+      _aviso('Informe a validade ou marque que o produto não tem validade.');
+      return;
+    }
     final lotes = <DateTime?, int>{};
     var semData = total;
     for (final lote in _lotes) {
@@ -256,7 +303,10 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       );
       semData -= lote.quantidade;
     }
-    if (semData > 0) lotes[null] = semData;
+    if (semData > 0) {
+      final data = _editando || _semValidade ? null : _validadeInicial;
+      lotes.update(data, (saldo) => saldo + semData, ifAbsent: () => semData);
+    }
 
     if (_editando) {
       final p = widget.produto!;
@@ -271,7 +321,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         ..custo = custo
         ..codigoBarras = codigo
         ..definirLotes(lotes)
-        ..naLoja = _naLoja
+        ..distribuirSaldo(saldoLoja, preferirLoja: naLoja && !noEstoque)
         ..local = local
         ..fornecedorId = _fornecedorId;
       estoque.salvarAlteracoes(p);
@@ -290,11 +340,18 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
           unidadesPorFardo: int.tryParse(_fardo.text.trim()) ?? 0,
           codigoBarras: codigo,
           lotes: lotes,
-          naLoja: _naLoja,
+          naLoja: naLoja,
+          saldoLoja: saldoLoja,
           local: local,
           fornecedorId: _fornecedorId,
         ),
       );
+    }
+    if (codigo != null) {
+      CatalogoLocal.recordar(codigo, (
+        nome: _nome.text.trim(),
+        categoria: _categoria.text.trim(),
+      ));
     }
     Navigator.pop(context);
   }
@@ -356,7 +413,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                     semanticsLabel: 'Consultando catálogo',
                   ),
                 )
-              else if (_podeBuscarOnline && _sugestaoCatalogo == null)
+              else if (_podeBuscarOnline && _fonteCatalogo == 'Catálogo local')
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
@@ -367,6 +424,35 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ),
                 ),
               if (_mensagemConsulta != null) Text(_mensagemConsulta!),
+              if (_sugestaoLocal case final local?)
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    InputChip(
+                      label: Text('Banco local: ' + local.nome),
+                      onPressed: () => _aplicarSugestao(local),
+                    ),
+                    if (_sugestaoCatalogo case final online?)
+                      ActionChip(
+                        label: const Text('Combinar banco e API'),
+                        onPressed: () {
+                          final medida = RegExp(
+                            r'\b\d+(?:[,.]\d+)?\s*(kg|g|mg|ml|cl|l|un|oz|lb)\b',
+                            caseSensitive: false,
+                          ).firstMatch(online.nome)?.group(0);
+                          _aplicarSugestao((
+                            nome: CatalogoLocal.formatarNome(
+                              local.nome,
+                              medida,
+                            ),
+                            categoria: local.categoria == 'Outros'
+                                ? online.categoria
+                                : local.categoria,
+                          ));
+                        },
+                      ),
+                  ],
+                ),
               if (_sugestaoCatalogo case final sugestao?)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
@@ -385,9 +471,10 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                       ),
                       trailing: const Icon(Icons.add),
                       onTap: () => setState(() {
-                        _nome.text = sugestao.nome;
+                        _nome.text = CatalogoLocal.formatarNome(sugestao.nome);
                         _categoria.text = sugestao.categoria;
                         _sugestaoCatalogo = null;
+                        _sugestaoLocal = null;
                       }),
                     ),
                   ),
@@ -448,49 +535,93 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ],
                 ),
               ],
-              titulo('Estoque'),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!_editando) ...[
-                    Expanded(
-                      child: TextFormField(
-                        controller: _quantidade,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: apenasNumeros,
-                        decoration: const InputDecoration(
-                          labelText: 'Quantidade atual',
-                        ),
-                        validator: _inteiro,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
+              titulo('Quantidades e destino'),
+              SegmentedButton<bool>(
+                multiSelectionEnabled: true,
+                segments: const [
+                  ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.inventory_2_outlined),
+                    label: Text('Estoque'),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.storefront_outlined),
+                    label: Text('Loja'),
+                  ),
+                ],
+                selected: _areas,
+                onSelectionChanged: (areas) => setState(() {
+                  _areas = areas;
+                  if (_editando && areas.length == 1) {
+                    final campo = areas.single ? _quantidadeLoja : _quantidade;
+                    campo.text = widget.produto!.quantidade.toString();
+                  }
+                }),
+              ),
+              const SizedBox(height: 12),
+              if (_editando)
+                Text('Saldo total: ' + widget.produto!.quantidade.toString()),
+              for (final (area, controle, rotulo) in [
+                (false, _quantidade, 'Quantidade no estoque'),
+                (true, _quantidadeLoja, 'Quantidade na loja'),
+              ])
+                if (_areas.contains(area))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: TextFormField(
-                      controller: _minimo,
+                      controller: controle,
                       keyboardType: TextInputType.number,
                       inputFormatters: apenasNumeros,
-                      decoration: const InputDecoration(
-                        labelText: 'Estoque mínimo',
-                      ),
+                      decoration: InputDecoration(labelText: rotulo),
                       validator: _inteiro,
                     ),
                   ),
-                ],
+              TextFormField(
+                controller: _minimo,
+                keyboardType: TextInputType.number,
+                inputFormatters: apenasNumeros,
+                decoration: const InputDecoration(
+                  labelText: 'Quantidade mínima',
+                ),
+                validator: _inteiro,
               ),
               const SizedBox(height: 14),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _unidade,
-                      decoration: const InputDecoration(
-                        labelText: 'Unidade',
-                        hintText: 'un, kg, cx',
-                      ),
-                      validator: _obrigatorio,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _unidade.text,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Embalagem'),
+                      items: [
+                        const DropdownMenuItem(
+                          value: 'un',
+                          child: Text('Solto'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'cx',
+                          child: Text('Caixa'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'fardo',
+                          child: Text('Fardo'),
+                        ),
+                        if (!const {
+                          'un',
+                          'cx',
+                          'fardo',
+                        }.contains(_unidade.text))
+                          DropdownMenuItem(
+                            value: _unidade.text,
+                            child: Text(_unidade.text),
+                          ),
+                      ],
+                      onChanged: (unidade) {
+                        if (unidade != null)
+                          setState(() => _unidade.text = unidade);
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -512,7 +643,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 controller: _caixa,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Unidades por caixa',
+                  labelText: 'Unidades por caixa (opcional)',
                 ),
                 validator: _validarFator,
               ),
@@ -521,32 +652,29 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 controller: _fardo,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Unidades por fardo',
+                  labelText: 'Unidades por fardo (opcional)',
                 ),
                 validator: _validarFator,
               ),
               const SizedBox(height: 12),
-              titulo('Área do produto'),
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(
-                    value: false,
-                    icon: Icon(Icons.inventory_2_outlined),
-                    label: Text('Estoque'),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    icon: Icon(Icons.storefront_outlined),
-                    label: Text('Loja'),
-                  ),
-                ],
-                selected: {_naLoja},
-                onSelectionChanged: (areas) =>
-                    setState(() => _naLoja = areas.single),
-              ),
               titulo('Lotes e validades'),
+              if (!_editando) ...[
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Produto sem validade'),
+                  value: _semValidade,
+                  onChanged: (valor) =>
+                      setState(() => _semValidade = valor ?? false),
+                ),
+                if (!_semValidade)
+                  CampoData(
+                    rotulo: 'Validade principal',
+                    valor: _validadeInicial,
+                    aoMudar: (data) => _validadeInicial = data,
+                  ),
+              ],
               const Text(
-                'Divida o saldo por data. As unidades restantes ficam sem validade informada.',
+                'Se houver datas diferentes, informe a quantidade de cada lote adicional.',
               ),
               const SizedBox(height: 12),
               for (final lote in _lotes)
@@ -607,10 +735,10 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                       controller: _custo,
                       keyboardType: decimal,
                       decoration: const InputDecoration(
-                        labelText: 'Custo (opcional)',
+                        labelText: 'Preço de compra',
                         prefixText: 'R\$ ',
                       ),
-                      validator: _valorOpcional,
+                      validator: _editando ? _valorOpcional : _valor,
                     ),
                   ),
                   const SizedBox(width: 12),

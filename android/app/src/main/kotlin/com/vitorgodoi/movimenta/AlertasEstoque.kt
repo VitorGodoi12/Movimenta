@@ -111,7 +111,7 @@ internal object AlertasEstoque {
 
     fun testar(context: Context): Boolean {
         criarCanal(context)
-        return publicar(context, ID + 1, "Notificação de teste do Stokio",
+        return publicar(context, ID + 1, "Notificação de teste do Movimenta",
             "Os alertas do estoque estão ativos neste aparelho.", false)
     }
 

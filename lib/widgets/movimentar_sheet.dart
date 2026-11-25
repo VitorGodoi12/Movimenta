@@ -52,6 +52,8 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
   late String? _motivo =
       widget.motivoInicial ?? _motivoPadrao(widget.tipoInicial);
   DateTime? _validade;
+  bool? _naLoja;
+  final _form = GlobalKey<FormState>();
   String _embalagem = 'un';
   final _quantidade = TextEditingController();
   String? _erro;
@@ -90,6 +92,7 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
   }
 
   void _confirmar() {
+    if (_form.currentState?.validate() == false) return;
     final p = _produto;
     final digitada = int.tryParse(_quantidade.text.trim());
     final fator = _tipo == TipoMovimento.entrada && _embalagem != 'un'
@@ -110,8 +113,13 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
       );
       return;
     }
-    if (_tipo == TipoMovimento.saida && qtd > p.quantidade) {
-      setState(() => _erro = 'Só há ${p.quantidade} ${p.unidade} em estoque.');
+    final saldo = switch (_naLoja) {
+      true => p.saldoLoja,
+      false => p.saldoEstoque,
+      null => p.quantidade,
+    };
+    if (_tipo == TipoMovimento.saida && qtd > saldo) {
+      setState(() => _erro = 'Só há $saldo ${p.unidade} no local selecionado.');
       return;
     }
 
@@ -121,6 +129,7 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
       qtd,
       motivo: _motivo,
       validade: _tipo == TipoMovimento.entrada ? _validade : null,
+      naLoja: ajuste ? null : _naLoja,
     );
 
     final texto = mov == null
@@ -320,12 +329,30 @@ class _MovimentarSheetState extends State<_MovimentarSheet> {
                 ],
               ),
             ],
+            if (!ajuste) ...[
+              const SizedBox(height: 12),
+              DropdownButtonFormField<bool?>(
+                initialValue: _naLoja,
+                decoration: const InputDecoration(
+                  labelText: 'Área da movimentação',
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Automático')),
+                  DropdownMenuItem(value: false, child: Text('Estoque')),
+                  DropdownMenuItem(value: true, child: Text('Loja')),
+                ],
+                onChanged: (valor) => setState(() => _naLoja = valor),
+              ),
+            ],
             if (_tipo == TipoMovimento.entrada) ...[
               const SizedBox(height: 16),
-              CampoData(
-                rotulo: 'Validade desta entrada (opcional)',
-                valor: _validade,
-                aoMudar: (d) => setState(() => _validade = d),
+              Form(
+                key: _form,
+                child: CampoData(
+                  rotulo: 'Validade desta entrada (opcional)',
+                  valor: _validade,
+                  aoMudar: (d) => setState(() => _validade = d),
+                ),
               ),
             ],
             if (_erro != null) ...[

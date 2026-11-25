@@ -214,7 +214,8 @@ class ProdutoDetalheScreen extends StatelessWidget {
               ),
               _Linha(
                 rotulo: 'Área',
-                valor: produto.naLoja ? 'Loja' : 'Estoque',
+                valor:
+                    '${produto.saldoEstoque} em estoque · ${produto.saldoLoja} na loja',
               ),
               _Linha(rotulo: 'Estoque mínimo', valor: '${produto.minimo}'),
               _Linha(

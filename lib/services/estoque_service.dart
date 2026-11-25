@@ -461,6 +461,7 @@ class EstoqueService extends ChangeNotifier {
     String? motivo,
     DateTime? validade,
     String? pagamento,
+    bool? naLoja,
   }) {
     final atual = produto.quantidade;
     int delta;
@@ -477,7 +478,16 @@ class EstoqueService extends ChangeNotifier {
     }
     if (quantidade < 0 || delta == 0) return null;
 
+    final saldoLoja = produto.saldoLoja;
+    final saldoArea = naLoja == true ? saldoLoja : produto.saldoEstoque;
+    if (naLoja != null && delta < -saldoArea) return null;
     final lotes = produto.alterarSaldo(delta, vencimento: validade);
+    if (naLoja != null) {
+      produto.distribuirSaldo(
+        saldoLoja + (naLoja ? delta : 0),
+        preferirLoja: naLoja && produto.quantidade == 0,
+      );
+    }
     return _registrar(
       produto,
       tipo,
@@ -485,6 +495,7 @@ class EstoqueService extends ChangeNotifier {
       motivo: motivo,
       lotes: lotes,
       pagamento: pagamento,
+      deltaLoja: produto.saldoLoja - saldoLoja,
     );
   }
 
@@ -496,6 +507,7 @@ class EstoqueService extends ChangeNotifier {
     int quantidade, {
     String? motivo,
     DateTime? validade,
+    bool? naLoja,
   }) {
     final mov = _aplicar(
       produto,
@@ -503,6 +515,7 @@ class EstoqueService extends ChangeNotifier {
       quantidade,
       motivo: motivo,
       validade: validade,
+      naLoja: naLoja,
     );
     if (mov != null) _mudou();
     return mov;
@@ -560,6 +573,12 @@ class EstoqueService extends ChangeNotifier {
     final i = _historico.indexWhere((m) => m.id == mov.id);
     if (i < 0) return false;
     final p = _buscar(mov.produtoId);
+    final saldoLoja = p?.saldoLoja;
+    final deltaLoja = mov.deltaLoja;
+    if (p != null && deltaLoja != null) {
+      final restaurado = saldoLoja! - deltaLoja;
+      if (restaurado < 0 || restaurado > p.quantidade - mov.delta) return false;
+    }
     if (p != null && mov.lotes.isNotEmpty) {
       if (mov.lotes.entries.any(
         (lote) => lote.value > (p.lotes[lote.key] ?? 0),
@@ -572,6 +591,9 @@ class EstoqueService extends ChangeNotifier {
     } else if (p != null) {
       final novo = p.quantidade - mov.delta;
       p.quantidade = novo < 0 ? 0 : novo;
+    }
+    if (p != null && deltaLoja != null) {
+      p.distribuirSaldo(saldoLoja! - deltaLoja, preferirLoja: p.naLoja);
     }
     _historico.removeAt(i);
     return true;
@@ -599,6 +621,7 @@ class EstoqueService extends ChangeNotifier {
     String? pagamento,
     DateTime? data,
     Map<DateTime?, int> lotes = const {},
+    int? deltaLoja,
   }) {
     final mov = Movimentacao(
       id: novoId(),
@@ -609,6 +632,7 @@ class EstoqueService extends ChangeNotifier {
       data: data ?? DateTime.now(),
       lotes: lotes,
       pagamento: pagamento,
+      deltaLoja: deltaLoja,
       motivo: motivo,
     );
     _historico.insert(0, mov);

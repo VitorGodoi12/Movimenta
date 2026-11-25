@@ -18,13 +18,13 @@ class MarcaStokio extends StatelessWidget {
             width: altura,
             height: altura,
             excludeFromSemantics: mostrarNome,
-            semanticLabel: 'Stokio',
+            semanticLabel: 'Movimenta',
           ),
         ),
         if (mostrarNome) ...[
           SizedBox(width: altura * 0.28),
           Text(
-            'Stokio',
+            'Movimenta',
             style: TextStyle(
               fontSize: altura * 0.8,
               fontWeight: FontWeight.w800,

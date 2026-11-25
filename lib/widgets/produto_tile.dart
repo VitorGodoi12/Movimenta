@@ -13,16 +13,19 @@ class ProdutoTile extends StatelessWidget {
     this.onTap,
     this.acao,
     this.compacto = false,
+    this.saldoVisivel,
   });
 
   final Produto produto;
   final VoidCallback? onTap;
   final Widget? acao;
   final bool compacto;
+  final int? saldoVisivel;
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    final quantidade = saldoVisivel ?? produto.quantidade;
     final validade = produto.validade;
     // Produto sem estoque não precisa de alerta de validade.
     final situacaoValidade = produto.quantidade > 0
@@ -93,8 +96,10 @@ class ProdutoTile extends StatelessWidget {
                     if (produto.minimo > 0) ...[
                       const SizedBox(height: 5),
                       LinearProgressIndicator(
-                        value: (produto.quantidade / (produto.minimo * 2))
-                            .clamp(0.0, 1.0),
+                        value: (quantidade / (produto.minimo * 2)).clamp(
+                          0.0,
+                          1.0,
+                        ),
                         borderRadius: BorderRadius.circular(8),
                         backgroundColor: AppCores.fundo,
                         color: produto.situacao == SituacaoEstoque.baixo
@@ -113,7 +118,7 @@ class ProdutoTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${produto.quantidade} ${produto.unidade}',
+                  '$quantidade ${produto.unidade}',
                   style: t.labelMedium?.copyWith(
                     color: cor,
                     fontWeight: FontWeight.w800,
@@ -183,7 +188,7 @@ class ProdutoTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${produto.quantidade} ${produto.unidade}',
+                        '$quantidade ${produto.unidade}',
                         style: t.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),

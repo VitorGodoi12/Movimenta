@@ -24,12 +24,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Começar a usar'), findsNothing);
-    await tester.tap(find.text('Estoque'));
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Estoque'));
     await tester.pumpAndSettle();
-    expect(find.text('Estoque'), findsWidgets);
-    await tester.tap(find.text('Vender'));
+    expect(find.widgetWithText(NavigationDestination, 'Estoque'), findsWidgets);
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Operações'));
     await tester.pumpAndSettle();
-    expect(find.text('Finalizar venda'), findsOneWidget);
+    expect(find.text('Ler código'), findsOneWidget);
     await tester.tap(find.widgetWithText(NavigationDestination, 'Loja'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Loja'), findsOneWidget);

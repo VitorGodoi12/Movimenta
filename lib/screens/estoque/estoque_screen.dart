@@ -128,7 +128,13 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
       listenable: Listenable.merge([estoque, perfil]),
       builder: (context, _) {
         final produtos = estoque.produtos
-            .where((p) => widget.loja == null || p.naLoja == widget.loja)
+            .where(
+              (p) => switch (widget.loja) {
+                true => p.saldoLoja > 0 || p.quantidade == 0 && p.naLoja,
+                false => p.saldoEstoque > 0 || p.quantidade == 0 && !p.naLoja,
+                null => true,
+              },
+            )
             .toList();
         final lista = _filtrar(produtos);
         final grupos = <String, List<Produto>>{};
@@ -310,6 +316,11 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                                         ProdutoTile(
                                           produto: produto,
                                           compacto: true,
+                                          saldoVisivel: widget.loja == true
+                                              ? produto.saldoLoja
+                                              : widget.loja == false
+                                              ? produto.saldoEstoque
+                                              : null,
                                           onTap: () => Navigator.push(
                                             context,
                                             MaterialPageRoute(

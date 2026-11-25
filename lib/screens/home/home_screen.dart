@@ -17,7 +17,8 @@ import 'package:stokio/widgets/dialogos.dart';
 import 'package:stokio/widgets/movimentar_sheet.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.abrirAba});
+  final ValueChanged<int>? abrirAba;
 
   void _abrir(BuildContext context, Widget tela) =>
       Navigator.push<void>(context, MaterialPageRoute(builder: (_) => tela));
@@ -133,6 +134,27 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (abrirAba != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        for (final (indice, icone, rotulo) in const [
+                          (1, Icons.inventory_2_outlined, 'Estoque'),
+                          (2, Icons.qr_code_scanner, 'Operações'),
+                          (3, Icons.storefront_outlined, 'Loja'),
+                          (4, Icons.grid_view_outlined, 'Mais'),
+                        ])
+                          ActionChip(
+                            avatar: Icon(icone, size: 17),
+                            label: Text(rotulo),
+                            onPressed: () => abrirAba!(indice),
+                          ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 Row(
                   children: [

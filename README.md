@@ -1,11 +1,11 @@
-# Stokio
+# Movimenta
 
 Aplicativo Flutter para pequenos negócios acompanharem o estoque, as validades, as entradas e as saídas. O perfil e o estoque ficam armazenados no aparelho. O leitor usa a câmera ou permite digitar o código de barras manualmente.
 
 ## Estrutura do projeto
 
 - `android/`, `ios/` e `web/` contêm a configuração de cada plataforma.
-- `assets/images/` contém a imagem original do ícone do Stokio.
+- `assets/images/` contém a imagem original do ícone do Movimenta.
 - `lib/` contém o aplicativo em Dart e `test/` contém os testes Flutter.
 
 ## Executar no Android
@@ -30,7 +30,7 @@ Ao ler ou digitar um código de barras, o aplicativo abre o produto cadastrado. 
 - Inventário guiado, local do produto, preço de custo e resumo de margem e lucro.
 - Exportação CSV de estoque e histórico, com filtros de movimentação por tipo.
 
-A atualização do aplicativo Android conserva os dados locais. Backups anteriores do Movimenta também podem ser restaurados pelo Stokio.
+A atualização do aplicativo Android conserva os dados locais. Backups anteriores do Movimenta também podem ser restaurados pelo Movimenta.
 
 ## Recursos da versão 1.2
 
@@ -40,13 +40,21 @@ A atualização do aplicativo Android conserva os dados locais. Backups anterior
 - A reposição considera as vendas dos últimos 30 dias, o saldo, o prazo de cada fornecedor e sete dias de reserva. Revise a mensagem antes de abrir o WhatsApp.
 - O lembrete semanal de backup aparece no Início. Em **Mais → Configurações e backup**, teste um backup sem substituir os dados do aparelho.
 
-## Stokio 1.4
+## Movimenta 1.4
 
 A edição Android mostra alertas do estoque local na central de notificações. Para permitir o som e conferir a entrega, abra **Mais → Configurações e backup → Ativar alertas sonoros**, depois toque em **Testar notificação**. O Android controla volume, permissões e horário efetivo da verificação diária. Pix, dinheiro e cartão registram a forma de pagamento da venda.
 
-## Stokio 1.5
+## Movimenta 1.5
 
 Estoque no aparelho, com busca, categorias, vendas, alertas Android e backup. O cadastro sugere nome e categoria para 15 códigos do catálogo incluído. No Android, escaneie um código novo ou toque em **Buscar no catálogo online** para consultar o Open Food Facts e, se necessário, o [Open Beauty Facts](https://world.openbeautyfacts.org/) via HTTPS. QR Codes GS1 Digital Link são convertidos no GTIN da embalagem. A busca envia o código de barras e o identificador do aplicativo. Estoque, preço e validade ficam no aparelho, e o cadastro manual funciona sem rede. Os dados do catálogo vêm do [Open Food Facts](https://world.openfoodfacts.org/) e são fornecidos sob a [ODbL](https://opendatacommons.org/licenses/odbl/1-0/).
+
+## Movimenta 1.7.2
+
+Em **Operações**, leia um código, cadastre produtos, registre movimentações, calcule o preço por unidade ou monte uma lista para compartilhar. **Pedidos a fornecedores** abre a reposição por fornecedor e permite revisar a mensagem antes do envio.
+
+No cadastro, selecione Estoque, Loja ou os dois, preencha as quantidades e digite as datas como DD/MM/AAAA. Para transferir um produto existente, edite a distribuição entre áreas mantendo o total. Escolha a embalagem em que o saldo será contado. O catálogo confirma nomes e códigos no aparelho e, quando disponíveis, apresenta sugestões dos catálogos online para comparação.
+
+Quando um APK Android for atualizado, publique a nova versão com o APK anexado no GitHub Releases.
 
 ## Compilar e testar
 

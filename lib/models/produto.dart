@@ -20,10 +20,16 @@ class Produto {
     this.unidadesPorCaixa = 0,
     this.unidadesPorFardo = 0,
     this.naLoja = false,
+    int? saldoLoja,
     this.local,
     this.fornecedorId,
   }) : _lotes = lotes ?? {if (quantidade > 0) validade: quantidade},
-       _validadeInicial = validade;
+       _validadeInicial = validade {
+    _saldoLoja = (saldoLoja ?? (naLoja ? this.quantidade : 0)).clamp(
+      0,
+      this.quantidade,
+    );
+  }
 
   final String id;
   String nome;
@@ -32,6 +38,15 @@ class Produto {
   DateTime? _validadeInicial;
   int unidadesPorCaixa;
   int unidadesPorFardo;
+
+  late int _saldoLoja;
+  int get saldoLoja => _saldoLoja.clamp(0, quantidade);
+  int get saldoEstoque => quantidade - saldoLoja;
+
+  void distribuirSaldo(int loja, {bool preferirLoja = false}) {
+    _saldoLoja = loja.clamp(0, quantidade);
+    naLoja = _saldoLoja > 0 || preferirLoja;
+  }
 
   Map<DateTime?, int> get lotes => Map.unmodifiable(_lotes);
 
@@ -64,6 +79,7 @@ class Produto {
           ? null
           : DateTime(vencimento.year, vencimento.month, vencimento.day);
       aplicarLotes({data: delta});
+      if (naLoja && saldoEstoque == delta) _saldoLoja += delta;
       return {data: delta};
     }
 
@@ -86,6 +102,7 @@ class Produto {
   }
 
   void aplicarLotes(Map<DateTime?, int> alteracoes) {
+    final anterior = quantidade;
     for (final MapEntry(key: data, value: delta) in alteracoes.entries) {
       final saldo = (_lotes[data] ?? 0) + delta;
       if (saldo > 0) {
@@ -93,6 +110,9 @@ class Produto {
       } else {
         _lotes.remove(data);
       }
+    }
+    if (quantidade < anterior) {
+      _saldoLoja = (_saldoLoja - (anterior - quantidade)).clamp(0, quantidade);
     }
   }
 
@@ -107,6 +127,7 @@ class Produto {
     _lotes
       ..clear()
       ..addAll(produto._lotes);
+    _saldoLoja = produto.saldoLoja;
   }
 
   int minimo;
@@ -181,6 +202,7 @@ class Produto {
     'codigoBarras': codigoBarras,
     'validade': validade?.toIso8601String(),
     'naLoja': naLoja,
+    'saldoLoja': saldoLoja,
     'local': local,
     'fornecedorId': fornecedorId,
   };
@@ -210,6 +232,7 @@ class Produto {
         ? null
         : DateTime.parse(j['validade'] as String),
     naLoja: j['naLoja'] == true,
+    saldoLoja: (j['saldoLoja'] as num?)?.toInt(),
     local: j['local'] as String?,
     fornecedorId: j['fornecedorId'] as String?,
   );

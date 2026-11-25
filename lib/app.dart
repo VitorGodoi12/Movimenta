@@ -11,7 +11,7 @@ class StokioApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Stokio',
+      title: 'Movimenta',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.claro(),
       locale: const Locale('pt', 'BR'),
