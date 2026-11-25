@@ -12,6 +12,8 @@ import 'package:stokio/screens/operacoes_screen.dart';
 import 'package:stokio/services/exportacao_service.dart';
 import 'package:stokio/theme/app_theme.dart';
 import 'package:stokio/widgets/cartao_painel.dart';
+import 'package:stokio/widgets/avatar_perfil.dart';
+import 'package:stokio/services/perfil_service.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -22,6 +24,7 @@ class ShellScreen extends StatefulWidget {
 
 class _ShellScreenState extends State<ShellScreen> {
   int _indice = 0;
+  final _menu = GlobalKey<ScaffoldState>();
 
   void _ir(int indice) {
     if (_indice == indice) return;
@@ -37,10 +40,22 @@ class _ShellScreenState extends State<ShellScreen> {
         if (!saiu) _ir(0);
       },
       child: Scaffold(
+        key: _menu,
+        drawerEnableOpenDragGesture: _indice == 0,
+        drawer: Drawer(
+          child: SafeArea(
+            child: _MaisScreen(
+              fecharMenu: () => _menu.currentState?.closeDrawer(),
+            ),
+          ),
+        ),
         body: IndexedStack(
           index: _indice,
           children: [
-            HomeScreen(abrirAba: _ir),
+            HomeScreen(
+              abrirAba: _ir,
+              abrirMenu: () => _menu.currentState?.openDrawer(),
+            ),
             const EstoqueScreen(loja: false),
             const OperacoesScreen(),
             const EstoqueScreen(loja: true),
@@ -117,7 +132,8 @@ class _AtalhoLeitor extends StatelessWidget {
 }
 
 class _MaisScreen extends StatelessWidget {
-  const _MaisScreen();
+  const _MaisScreen({this.fecharMenu});
+  final VoidCallback? fecharMenu;
 
   Future<void> _exportar(BuildContext context) async {
     final estoqueCsv = await showDialog<bool>(
@@ -147,8 +163,11 @@ class _MaisScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void abrir(Widget tela) =>
-        Navigator.push<void>(context, MaterialPageRoute(builder: (_) => tela));
+    void abrir(Widget tela) {
+      fecharMenu?.call();
+      Navigator.push<void>(context, MaterialPageRoute(builder: (_) => tela));
+    }
+
     final grupos = <(String, List<(IconData, String, VoidCallback)>)>[
       (
         'Acompanhamento',
@@ -181,7 +200,10 @@ class _MaisScreen extends StatelessWidget {
           (
             Icons.table_chart_outlined,
             'Exportar CSV',
-            () => _exportar(context),
+            () {
+              fecharMenu?.call();
+              _exportar(context);
+            },
           ),
         ],
       ),
@@ -193,48 +215,63 @@ class _MaisScreen extends StatelessWidget {
             'Configurações e backup',
             () => abrir(const ConfiguracoesScreen()),
           ),
-          (
-            Icons.person_outline,
-            'Perfil da loja',
-            () => abrir(const PerfilScreen()),
-          ),
         ],
       ),
     ];
+    final lista = ListView(
+      padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
+      children: [
+        if (fecharMenu != null)
+          ListenableBuilder(
+            listenable: perfil,
+            builder: (context, _) {
+              final cliente = perfil.cliente;
+              return CartaoPainel(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(12),
+                  leading: AvatarPerfil(cliente: cliente),
+                  title: Text(
+                    cliente?.nomeExibicao ?? 'Meu perfil',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text('Editar perfil'),
+                  trailing: const Icon(Icons.edit_outlined, size: 20),
+                  onTap: () => abrir(const PerfilScreen()),
+                ),
+              );
+            },
+          ),
+        for (final (titulo, destinos) in grupos) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
+            child: Text(titulo, style: Theme.of(context).textTheme.titleSmall),
+          ),
+          CartaoPainel(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (final (i, (icone, rotulo, acao)) in destinos.indexed) ...[
+                  if (i > 0)
+                    const Divider(height: 1, indent: 54, endIndent: 14),
+                  ListTile(
+                    leading: Icon(icone, color: context.cores.primary),
+                    title: Text(rotulo),
+                    trailing: const Icon(Icons.chevron_right, size: 18),
+                    onTap: acao,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+    if (fecharMenu != null) return lista;
     return Scaffold(
       appBar: AppBar(title: const Text('Mais')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
-        children: [
-          for (final (titulo, destinos) in grupos) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
-              child: Text(
-                titulo,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-            ),
-            CartaoPainel(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final (i, (icone, rotulo, acao))
-                      in destinos.indexed) ...[
-                    if (i > 0)
-                      const Divider(height: 1, indent: 54, endIndent: 14),
-                    ListTile(
-                      leading: Icon(icone, color: context.cores.primary),
-                      title: Text(rotulo),
-                      trailing: const Icon(Icons.chevron_right, size: 18),
-                      onTap: acao,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
+      body: lista,
     );
   }
 }

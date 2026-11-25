@@ -1,3 +1,4 @@
+import 'package:stokio/widgets/avatar_perfil.dart';
 import 'package:stokio/screens/estoque/produto_form_screen.dart';
 import 'package:stokio/screens/scanner/fluxo_scanner.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,8 @@ import 'package:stokio/widgets/dialogos.dart';
 import 'package:stokio/widgets/movimentar_sheet.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, this.abrirAba});
+  const HomeScreen({super.key, this.abrirAba, this.abrirMenu});
+  final VoidCallback? abrirMenu;
   final ValueChanged<int>? abrirAba;
 
   void _abrir(BuildContext context, Widget tela) =>
@@ -34,7 +36,11 @@ class HomeScreen extends StatelessWidget {
           listenable: Listenable.merge([estoque, perfil]),
           builder: (context, _) {
             final nome =
-                perfil.cliente?.nome.trim().split(RegExp(r'\s+')).first ?? '';
+                perfil.cliente?.nomeExibicao
+                    .trim()
+                    .split(RegExp(r'\s+'))
+                    .first ??
+                '';
             final falta = estoque.baixos.length + estoque.zerados.length;
             final validade = estoque.vencidos.length + estoque.vencendo.length;
             final movimentosHoje = estoque.historico
@@ -45,23 +51,11 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 45,
-                      height: 45,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: context.cores.primaryContainer,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Text(
-                        nome.isEmpty
-                            ? 'M'
-                            : nome.characters.first.toUpperCase(),
-                        style: t.titleLarge?.copyWith(
-                          color: context.cores.onPrimaryContainer,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                    IconButton(
+                      tooltip: 'Abrir menu do perfil',
+                      onPressed: abrirMenu,
+                      padding: EdgeInsets.zero,
+                      icon: AvatarPerfil(cliente: perfil.cliente),
                     ),
                     const SizedBox(width: 11),
                     Expanded(
@@ -133,6 +127,36 @@ class HomeScreen extends StatelessWidget {
                             () => _abrir(context, const HistoricoScreen()),
                           ),
                         ];
+                    final rotuloEstilo = t.labelLarge!;
+                    final numeroEstilo = t.titleLarge!.copyWith(
+                      fontWeight: FontWeight.w800,
+                    );
+                    final notaEstilo = t.bodySmall!.copyWith(
+                      color: context.cores.onSurfaceVariant,
+                    );
+                    double alturaDoTexto(String texto, TextStyle estilo) {
+                      final medidas =
+                          TextPainter(
+                            text: TextSpan(text: texto, style: estilo),
+                            textDirection: Directionality.of(context),
+                            textScaler: MediaQuery.textScalerOf(context),
+                          )..layout(
+                            maxWidth: (largura - 28).clamp(0, double.infinity),
+                          );
+                      final altura = medidas.height.ceilToDouble();
+                      medidas.dispose();
+                      return altura;
+                    }
+
+                    final altura = dados
+                        .map(
+                          (dado) =>
+                              64 +
+                              alturaDoTexto(dado.$2, rotuloEstilo) +
+                              alturaDoTexto(dado.$3, numeroEstilo) +
+                              alturaDoTexto(dado.$4, notaEstilo),
+                        )
+                        .reduce((a, b) => a > b ? a : b);
                     return Wrap(
                       spacing: 12,
                       runSpacing: 12,
@@ -140,6 +164,7 @@ class HomeScreen extends StatelessWidget {
                         for (final (icone, rotulo, numero, nota, acao) in dados)
                           SizedBox(
                             width: largura,
+                            height: altura,
                             child: CartaoPainel(
                               padding: EdgeInsets.zero,
                               child: InkWell(

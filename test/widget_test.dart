@@ -1,3 +1,4 @@
+import 'package:stokio/widgets/cartao_painel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stokio/app.dart';
@@ -24,6 +25,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Começar a usar'), findsNothing);
+    Size painel(String titulo) => tester.getSize(
+      find.ancestor(of: find.text(titulo), matching: find.byType(CartaoPainel)),
+    );
+    expect(painel('Produtos'), painel('Valor em estoque'));
+    expect(painel('Produtos'), painel('Abaixo do mínimo'));
+    expect(painel('Produtos'), painel('Movimentos de hoje'));
+    await tester.tap(find.byTooltip('Abrir menu do perfil'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Drawer), findsOneWidget);
+    expect(find.text('Configurações e backup'), findsOneWidget);
+    await tester.tap(find.text('Editar perfil'));
+    await tester.pumpAndSettle();
+    expect(find.text('Meu perfil'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Apelido no app (opcional)'),
+      'Vitinho',
+    );
+    await tester.tap(find.text('Azul'));
+    final salvar = find.text('Salvar perfil');
+    await tester.ensureVisible(salvar);
+    await tester.tap(salvar);
+    await tester.pumpAndSettle();
+    expect(find.text('Olá, Vitinho'), findsOneWidget);
+
     await tester.tap(find.widgetWithText(NavigationDestination, 'Estoque'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(NavigationDestination, 'Estoque'), findsWidgets);
@@ -51,6 +76,8 @@ void main() {
     addTearDown(perfilRecarregado.dispose);
     await perfilRecarregado.carregar();
     expect(perfilRecarregado.cliente?.estabelecimento, 'Loja Teste');
+    expect(perfilRecarregado.cliente?.apelido, 'Vitinho');
+    expect(perfilRecarregado.cliente?.corAvatar, 1);
   });
 
   testWidgets('Confere uma lista e importa pelo menu do estoque', (

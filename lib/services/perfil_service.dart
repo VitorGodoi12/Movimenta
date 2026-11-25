@@ -55,9 +55,12 @@ class PerfilService extends ChangeNotifier {
   Future<void> salvar() => Armazenamento.gravar(_chave, jsonEncode(toJson()));
 
   Future<void> definirCliente(Cliente novo) async {
+    final dados = toJson()..['cliente'] = novo.toJson();
+    if (!await Armazenamento.gravar(_chave, jsonEncode(dados))) {
+      throw StateError('Falha ao gravar o perfil.');
+    }
     cliente = novo;
     notifyListeners();
-    await salvar();
   }
 
   Future<void> definirDiasAviso(int dias) async {
