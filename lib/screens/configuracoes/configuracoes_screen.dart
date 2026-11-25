@@ -297,7 +297,7 @@ class _ConfiguracoesScreenState extends State<ConfiguracoesScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Movimenta 1.8.0',
+            'Movimenta 1.8.1',
             style: t.bodySmall?.copyWith(color: context.cores.onSurfaceVariant),
           ),
         ],

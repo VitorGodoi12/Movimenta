@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stokio/screens/alertas/alertas_screen.dart';
-import 'package:stokio/screens/alertas/lista_compras_screen.dart';
 import 'package:stokio/screens/configuracoes/configuracoes_screen.dart';
 import 'package:stokio/screens/estoque/estoque_screen.dart';
 import 'package:stokio/screens/fornecedores/fornecedores_screen.dart';
@@ -10,11 +9,8 @@ import 'package:stokio/screens/home/home_screen.dart';
 import 'package:stokio/screens/inventario/inventario_screen.dart';
 import 'package:stokio/screens/perfil/perfil_screen.dart';
 import 'package:stokio/screens/operacoes_screen.dart';
-import 'package:stokio/services/estoque_service.dart';
 import 'package:stokio/services/exportacao_service.dart';
-import 'package:stokio/services/perfil_service.dart';
 import 'package:stokio/theme/app_theme.dart';
-import 'package:stokio/utils/formatadores.dart';
 import 'package:stokio/widgets/cartao_painel.dart';
 
 class ShellScreen extends StatefulWidget {
@@ -123,163 +119,121 @@ class _AtalhoLeitor extends StatelessWidget {
 class _MaisScreen extends StatelessWidget {
   const _MaisScreen();
 
-  List<int> _semanasDoMes(int dias) {
-    final vendas = estoque.vendasPorDia(dias);
-    return [
-      for (var i = 0; i < vendas.length; i += 7)
-        vendas.skip(i).take(7).fold(0, (soma, valor) => soma + valor),
-    ];
+  Future<void> _exportar(BuildContext context) async {
+    final estoqueCsv = await showDialog<bool>(
+      context: context,
+      builder: (dialogo) => SimpleDialog(
+        title: const Text('Exportar CSV'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogo, true),
+            child: const Text('Estoque'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogo, false),
+            child: const Text('Histórico'),
+          ),
+        ],
+      ),
+    );
+    if (estoqueCsv == null) return;
+    await ExportacaoService.compartilhar(
+      estoqueCsv ? 'estoque-movimenta.csv' : 'historico-movimenta.csv',
+      estoqueCsv
+          ? ExportacaoService.csvEstoque()
+          : ExportacaoService.csvHistorico(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    final agora = DateTime.now();
-    final destinos = <(IconData, String, Widget)>[
+    void abrir(Widget tela) =>
+        Navigator.push<void>(context, MaterialPageRoute(builder: (_) => tela));
+    final grupos = <(String, List<(IconData, String, VoidCallback)>)>[
       (
-        Icons.notifications_outlined,
-        'Alertas de estoque e validade',
-        const AlertasScreen(),
+        'Acompanhamento',
+        [
+          (
+            Icons.history_rounded,
+            'Histórico e resumo',
+            () => abrir(const HistoricoScreen()),
+          ),
+          (
+            Icons.notifications_outlined,
+            'Alertas de estoque e validade',
+            () => abrir(const AlertasScreen()),
+          ),
+          (
+            Icons.fact_check_outlined,
+            'Inventário guiado',
+            () => abrir(const InventarioScreen()),
+          ),
+        ],
       ),
       (
-        Icons.shopping_cart_outlined,
-        'Lista de compras',
-        const ListaComprasScreen(),
+        'Organização',
+        [
+          (
+            Icons.local_shipping_outlined,
+            'Fornecedores',
+            () => abrir(const FornecedoresScreen()),
+          ),
+          (
+            Icons.table_chart_outlined,
+            'Exportar CSV',
+            () => _exportar(context),
+          ),
+        ],
       ),
       (
-        Icons.fact_check_outlined,
-        'Inventário guiado',
-        const InventarioScreen(),
+        'Preferências',
+        [
+          (
+            Icons.settings_outlined,
+            'Configurações e backup',
+            () => abrir(const ConfiguracoesScreen()),
+          ),
+          (
+            Icons.person_outline,
+            'Perfil da loja',
+            () => abrir(const PerfilScreen()),
+          ),
+        ],
       ),
-      (
-        Icons.local_shipping_outlined,
-        'Fornecedores',
-        const FornecedoresScreen(),
-      ),
-      (Icons.history, 'Histórico e resumo', const HistoricoScreen()),
-      (
-        Icons.settings_outlined,
-        'Configurações e backup',
-        const ConfiguracoesScreen(),
-      ),
-      (Icons.person_outline, 'Perfil da loja', const PerfilScreen()),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('Mais')),
-      body: ListenableBuilder(
-        listenable: Listenable.merge([estoque, perfil]),
-        builder: (context, _) => ListView(
-          padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
-          children: [
-            CartaoPainel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Resumo do mês',
-                          style: t.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '${agora.month.toString().padLeft(2, '0')}/${agora.year}',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    formatarPreco(estoque.lucroEstimado(agora.day)),
-                    style: t.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const Text('Lucro estimado · vendas com custo informado'),
-                  const SizedBox(height: 12),
-                  GraficoPainel(valores: _semanasDoMes(agora.day)),
-                  const SizedBox(height: 4),
-                  const Text('Unidades vendidas por semana do mês'),
-                ],
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
+        children: [
+          for (final (titulo, destinos) in grupos) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
+              child: Text(
+                titulo,
+                style: Theme.of(context).textTheme.titleSmall,
               ),
             ),
-            const SizedBox(height: 12),
             CartaoPainel(
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-                  for (final (i, (icone, titulo, tela))
+                  for (final (i, (icone, rotulo, acao))
                       in destinos.indexed) ...[
                     if (i > 0)
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const Divider(height: 1, indent: 54, endIndent: 14),
                     ListTile(
                       leading: Icon(icone, color: context.cores.primary),
-                      title: Text(titulo),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.push<void>(
-                        context,
-                        MaterialPageRoute(builder: (_) => tela),
-                      ),
+                      title: Text(rotulo),
+                      trailing: const Icon(Icons.chevron_right, size: 18),
+                      onTap: acao,
                     ),
                   ],
-                  const Divider(height: 1, indent: 16, endIndent: 16),
-                  ListTile(
-                    leading: Icon(
-                      Icons.table_chart_outlined,
-                      color: context.cores.primary,
-                    ),
-                    title: const Text('Exportar CSV'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      final tipo = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => SimpleDialog(
-                          title: const Text('Exportar CSV'),
-                          children: [
-                            SimpleDialogOption(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Estoque'),
-                            ),
-                            SimpleDialogOption(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Histórico'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (tipo != null) {
-                        await ExportacaoService.compartilhar(
-                          tipo ? 'estoque-stokio.csv' : 'historico-stokio.csv',
-                          tipo
-                              ? ExportacaoService.csvEstoque()
-                              : ExportacaoService.csvHistorico(),
-                        );
-                      }
-                    },
-                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: context.cores.primaryContainer,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                perfil.ultimoBackup == null
-                    ? 'Estoque local salvo neste aparelho. Nenhum backup registrado.'
-                    : 'Estoque local salvo neste aparelho. Último backup em ${formatarData(perfil.ultimoBackup!)}.',
-                style: t.bodyMedium?.copyWith(
-                  color: context.cores.onPrimaryContainer,
-                ),
-              ),
-            ),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:stokio/widgets/cartao_painel.dart';
 import 'package:stokio/widgets/campo_data.dart';
 import 'package:flutter/material.dart';
 import 'package:stokio/models/movimentacao.dart';
@@ -181,7 +182,16 @@ class _ListaMovimentacoesState extends State<_ListaMovimentacoes> {
                             ),
                           );
                         }
-                        return MovimentacaoTile(mov: item as Movimentacao);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: CartaoPainel(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 3,
+                            ),
+                            child: MovimentacaoTile(mov: item as Movimentacao),
+                          ),
+                        );
                       },
                     ),
             ),

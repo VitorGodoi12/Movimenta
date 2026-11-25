@@ -1,3 +1,4 @@
+import 'package:stokio/widgets/cartao_painel.dart';
 import 'package:flutter/material.dart';
 import 'package:stokio/theme/app_theme.dart';
 
@@ -19,34 +20,37 @@ class EstadoVazio extends StatelessWidget {
 
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: context.cores.primaryContainer,
-                shape: BoxShape.circle,
+        padding: const EdgeInsets.all(20),
+        child: CartaoPainel(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: context.cores.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icone, size: 28),
               ),
-              child: Icon(icone, size: 28),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              titulo,
-              style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              texto,
-              style: t.bodyMedium?.copyWith(
-                color: context.cores.onSurfaceVariant,
+              const SizedBox(height: 16),
+              Text(
+                titulo,
+                style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                texto,
+                style: t.bodyMedium?.copyWith(
+                  color: context.cores.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,9 +1,10 @@
+import 'package:stokio/screens/estoque/produto_form_screen.dart';
+import 'package:stokio/screens/scanner/fluxo_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:stokio/models/movimentacao.dart';
 import 'package:stokio/models/produto.dart';
 import 'package:stokio/screens/alertas/alertas_screen.dart';
 import 'package:stokio/screens/alertas/lista_compras_screen.dart';
-import 'package:stokio/screens/estoque/estoque_screen.dart';
 import 'package:stokio/screens/estoque/produto_detalhe_screen.dart';
 import 'package:stokio/screens/inventario/inventario_screen.dart';
 import 'package:stokio/screens/historico/historico_screen.dart';
@@ -36,7 +37,9 @@ class HomeScreen extends StatelessWidget {
                 perfil.cliente?.nome.trim().split(RegExp(r'\s+')).first ?? '';
             final falta = estoque.baixos.length + estoque.zerados.length;
             final validade = estoque.vencidos.length + estoque.vencendo.length;
-            final recentes = estoque.vendasPorDia(7);
+            final movimentosHoje = estoque.historico
+                .where((m) => DateUtils.isSameDay(m.data, DateTime.now()))
+                .length;
             return ListView(
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
               children: [
@@ -47,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                       height: 45,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppCores.roxoSuave,
+                        color: context.cores.primaryContainer,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
@@ -55,7 +58,7 @@ class HomeScreen extends StatelessWidget {
                             ? 'M'
                             : nome.characters.first.toUpperCase(),
                         style: t.titleLarge?.copyWith(
-                          color: context.cores.primary,
+                          color: context.cores.onPrimaryContainer,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -91,138 +94,147 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(19),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF7655BD), Color(0xFF4D318F)],
-                    ),
-                    borderRadius: BorderRadius.circular(26),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Valor em estoque',
-                        style: t.titleSmall?.copyWith(
-                          color: AppCores.roxoSuave,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        formatarPreco(estoque.valorEmEstoque),
-                        style: t.headlineLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${recentes.fold<int>(0, (a, b) => a + b)} un. vendidas em 7 dias',
-                              style: t.bodySmall?.copyWith(
-                                color: AppCores.roxoSuave,
+                const SizedBox(height: 20),
+                LayoutBuilder(
+                  builder: (context, limites) {
+                    final largura =
+                        limites.maxWidth < 300 ||
+                            MediaQuery.textScalerOf(context).scale(14) > 20
+                        ? limites.maxWidth
+                        : (limites.maxWidth - 12) / 2;
+                    final dados =
+                        <(IconData, String, String, String, VoidCallback)>[
+                          (
+                            Icons.inventory_2_outlined,
+                            'Produtos',
+                            estoque.total.toString(),
+                            'Cadastros ativos',
+                            () => abrirAba?.call(1),
+                          ),
+                          (
+                            Icons.account_balance_wallet_outlined,
+                            'Valor em estoque',
+                            formatarPreco(estoque.valorEmEstoque),
+                            'Custo: ' + formatarPreco(estoque.custoEmEstoque),
+                            () => _abrir(context, const HistoricoScreen()),
+                          ),
+                          (
+                            Icons.warning_amber_rounded,
+                            'Abaixo do mínimo',
+                            falta.toString(),
+                            'Validades próximas: ' + validade.toString(),
+                            () => _abrir(context, const AlertasScreen()),
+                          ),
+                          (
+                            Icons.swap_horiz_rounded,
+                            'Movimentos de hoje',
+                            movimentosHoje.toString(),
+                            'Entradas, saídas e ajustes',
+                            () => _abrir(context, const HistoricoScreen()),
+                          ),
+                        ];
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        for (final (icone, rotulo, numero, nota, acao) in dados)
+                          SizedBox(
+                            width: largura,
+                            child: CartaoPainel(
+                              padding: EdgeInsets.zero,
+                              child: InkWell(
+                                onTap: acao,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        icone,
+                                        size: 20,
+                                        color: context.cores.primary,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(rotulo, style: t.labelLarge),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        numero,
+                                        style: t.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        nota,
+                                        style: t.bodySmall?.copyWith(
+                                          color: context.cores.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                          GraficoPainel(valores: recentes, linha: true),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (abrirAba != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 14),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        for (final (indice, icone, rotulo) in const [
-                          (1, Icons.inventory_2_outlined, 'Estoque'),
-                          (2, Icons.qr_code_scanner, 'Operações'),
-                          (3, Icons.storefront_outlined, 'Loja'),
-                          (4, Icons.grid_view_outlined, 'Mais'),
-                        ])
-                          ActionChip(
-                            avatar: Icon(icone, size: 17),
-                            label: Text(rotulo),
-                            onPressed: () => abrirAba!(indice),
-                          ),
                       ],
-                    ),
-                  ),
-                const SizedBox(height: 12),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
                 Text(
                   'Ações rápidas',
                   style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    for (final (i, (nome, acao)) in <(String, VoidCallback)>[
-                      (
-                        '+ Entrada',
-                        () => mostrarMovimentarSheet(
-                          context,
-                          tipo: TipoMovimento.entrada,
-                        ),
-                      ),
-                      (
-                        'Inventário',
-                        () => _abrir(context, const InventarioScreen()),
-                      ),
-                      (
-                        'Pedido',
-                        () => _abrir(context, const ListaComprasScreen()),
-                      ),
-                    ].indexed) ...[
-                      if (i > 0) const SizedBox(width: 6),
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                    for (final (icone, rotulo, acao)
+                        in <(IconData, String, VoidCallback)>[
+                          (
+                            Icons.south_west_rounded,
+                            'Entrada',
+                            () => mostrarMovimentarSheet(context),
                           ),
-                          onPressed: acao,
-                          child: Text(nome, textAlign: TextAlign.center),
-                        ),
+                          (
+                            Icons.north_east_rounded,
+                            'Saída',
+                            () => mostrarMovimentarSheet(
+                              context,
+                              tipo: TipoMovimento.saida,
+                            ),
+                          ),
+                          (
+                            Icons.add_box_outlined,
+                            'Cadastrar',
+                            () => _abrir(context, const ProdutoFormScreen()),
+                          ),
+                          (
+                            Icons.qr_code_scanner,
+                            'Ler código',
+                            () => escanearEAbrir(context),
+                          ),
+                          (
+                            Icons.fact_check_outlined,
+                            'Inventário',
+                            () => _abrir(context, const InventarioScreen()),
+                          ),
+                          (
+                            Icons.shopping_cart_outlined,
+                            'Pedido',
+                            () => _abrir(context, const ListaComprasScreen()),
+                          ),
+                        ])
+                      ActionChip(
+                        avatar: Icon(icone, size: 18),
+                        label: Text(rotulo),
+                        onPressed: acao,
                       ),
-                    ],
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _indicador(
-                        context,
-                        'Validade · ${perfil.diasAvisoValidade} dias',
-                        validade,
-                        Theme.of(context).brightness == Brightness.dark
-                            ? AppCores.baixo
-                            : const Color(0xFF8A5700),
-                        FiltroEstoque.vencendo,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _indicador(
-                        context,
-                        'Abaixo do mínimo',
-                        falta,
-                        AppCores.zerado,
-                        FiltroEstoque.emFalta,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 CartaoPainel(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,33 +333,6 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _indicador(
-    BuildContext context,
-    String nome,
-    int numero,
-    Color cor,
-    FiltroEstoque filtro,
-  ) => CartaoPainel(
-    padding: EdgeInsets.zero,
-    child: InkWell(
-      onTap: () => _abrir(context, EstoqueScreen(filtroInicial: filtro)),
-      child: Padding(
-        padding: const EdgeInsets.all(13),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(nome, style: Theme.of(context).textTheme.bodySmall),
-            Text(
-              '$numero',
-              style: Theme.of(context).textTheme.headlineSmall
-                  ?.copyWith(color: cor, fontWeight: FontWeight.w800),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 
   Widget _alerta(BuildContext context, Produto produto) {
     final vencimento = produto.validade;

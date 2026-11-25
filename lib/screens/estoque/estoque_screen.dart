@@ -170,20 +170,37 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            heroTag: null,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    ProdutoFormScreen(lojaInicial: widget.loja == true),
-              ),
-            ),
-            icon: const Icon(Icons.add),
-            label: const Text('Cadastrar'),
-          ),
           body: Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        lista.length.toString() + ' produtos na lista',
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: context.cores.onSurfaceVariant),
+                      ),
+                    ),
+                    FilledButton.icon(
+                      onPressed: () => Navigator.push<void>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProdutoFormScreen(
+                            lojaInicial: widget.loja == true,
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Cadastrar'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 42),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                 child: TextField(

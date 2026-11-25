@@ -10,7 +10,7 @@ class OpenFoodFacts {
   static const disponivel = true;
   static const _limite = Duration(seconds: 5);
   static const _agente =
-      'Movimenta/1.8.0 (https://github.com/VitorGodoi12/Movimenta)';
+      'Movimenta/1.8.1 (https://github.com/VitorGodoi12/Movimenta)';
   static final _buscasRecentes = <DateTime>[];
 
   static Future<List<SugestaoCatalogo>> buscarNome(String nome) async {

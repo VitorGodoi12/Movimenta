@@ -1,3 +1,6 @@
+import 'package:stokio/widgets/cartao_painel.dart';
+import 'package:stokio/theme/app_theme.dart';
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -75,16 +78,61 @@ class OperacoesScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
         children: [
-          for (final (icone, titulo, legenda, acao) in acoes)
-            Card(
-              child: ListTile(
-                leading: Icon(icone),
-                title: Text(titulo),
-                subtitle: Text(legenda),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: acao,
+          Card(
+            color: context.cores.primaryContainer,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 10,
+              ),
+              leading: CircleAvatar(
+                backgroundColor: context.cores.primary,
+                foregroundColor: context.cores.onPrimary,
+                child: Icon(acoes.first.$1),
+              ),
+              title: Text(
+                acoes.first.$2,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              subtitle: Text(acoes.first.$3),
+              trailing: const Icon(Icons.arrow_forward_rounded),
+              onTap: acoes.first.$4,
+            ),
+          ),
+          for (final (secao, indices) in const [
+            ('Movimentar', [1, 2, 3]),
+            ('Comprar e vender', [4, 5, 7]),
+            ('Ferramentas', [6]),
+          ]) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+              child: Text(
+                secao,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
+            CartaoPainel(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (final (i, indice) in indices.indexed) ...[
+                    if (i > 0)
+                      const Divider(height: 1, indent: 54, endIndent: 12),
+                    ListTile(
+                      leading: Icon(
+                        acoes[indice].$1,
+                        color: context.cores.primary,
+                      ),
+                      title: Text(acoes[indice].$2),
+                      subtitle: Text(acoes[indice].$3),
+                      trailing: const Icon(Icons.chevron_right, size: 18),
+                      onTap: acoes[indice].$4,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
