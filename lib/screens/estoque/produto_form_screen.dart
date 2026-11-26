@@ -20,6 +20,7 @@ class ProdutoFormScreen extends StatefulWidget {
     super.key,
     this.produto,
     this.codigoInicial,
+    this.vincularProduto,
     this.lojaInicial = false,
   });
 
@@ -28,6 +29,7 @@ class ProdutoFormScreen extends StatefulWidget {
 
   /// Código lido pelo scanner para preencher o formulário.
   final String? codigoInicial;
+  final Future<Produto?> Function(BuildContext)? vincularProduto;
 
   @override
   State<ProdutoFormScreen> createState() => _ProdutoFormScreenState();
@@ -36,12 +38,14 @@ class ProdutoFormScreen extends StatefulWidget {
 class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   final _chave = GlobalKey<FormState>();
   ProdutoCatalogo? _sugestaoCatalogo;
-  ProdutoCatalogo? _sugestaoLocal;
   String? _marcaCatalogo;
   String? _mensagemConsulta;
   bool _buscandoCatalogo = false;
   String _fonteCatalogo = 'Catálogo local';
   int _consultaCatalogo = 0;
+  String? _codigoConsultado;
+  String? _nomeAutomatico;
+  String? _categoriaAutomatica;
 
   @override
   void initState() {
@@ -52,23 +56,48 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   }
 
   bool get _podeBuscarOnline =>
-      OpenFoodFacts.disponivel && !_editando && eGtin(_codigo.text.trim());
+      OpenFoodFacts.disponivel &&
+      !_editando &&
+      eGtin(_codigo.text.trim()) &&
+      estoque.porCodigo(_codigo.text) == null;
+
+  void _preencherAutomaticamente(ProdutoCatalogo produto) {
+    if (_nome.text.trim().isEmpty) {
+      _nomeAutomatico = CatalogoLocal.formatarNome(produto.nome);
+      _nome.text = _nomeAutomatico!;
+    }
+    if (_categoria.text.trim().isEmpty) {
+      _categoriaAutomatica = produto.categoria;
+      _categoria.text = _categoriaAutomatica!;
+    }
+  }
 
   Future<void> _consultarCatalogo(String codigo, {bool online = false}) async {
     if (_editando) return;
     codigo = codigo.trim();
     final consulta = ++_consultaCatalogo;
+    final gtin = eGtin(codigo);
     final buscarOnline =
-        online && _podeBuscarOnline && estoque.porCodigo(codigo) == null;
+        online &&
+        OpenFoodFacts.disponivel &&
+        gtin &&
+        estoque.porCodigo(codigo) == null;
     setState(() {
+      if (_codigoConsultado != codigo) {
+        if (_nome.text == _nomeAutomatico) _nome.clear();
+        if (_categoria.text == _categoriaAutomatica) _categoria.clear();
+        _nomeAutomatico = null;
+        _categoriaAutomatica = null;
+        _codigoConsultado = codigo;
+      }
       _sugestaoCatalogo = null;
-      _sugestaoLocal = null;
       _mensagemConsulta = null;
       _marcaCatalogo = null;
       _fonteCatalogo = 'Catálogo local';
       _buscandoCatalogo = buscarOnline;
     });
 
+    if (!gtin || estoque.porCodigo(codigo) != null) return;
     ProdutoCatalogo? local;
     try {
       local = await CatalogoLocal.buscar(codigo);
@@ -77,38 +106,38 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     }
     if (!mounted || consulta != _consultaCatalogo) return;
 
-    if (!buscarOnline) {
+    if (local != null) {
       setState(() {
         _sugestaoCatalogo = local;
         _buscandoCatalogo = false;
+        _preencherAutomaticamente(local!);
       });
       return;
     }
+    if (!buscarOnline) return;
 
-    setState(() => _sugestaoLocal = local);
     try {
       final sugestao = await OpenFoodFacts.buscar(codigo);
       if (!mounted || consulta != _consultaCatalogo) return;
       setState(() {
         _buscandoCatalogo = false;
-        if (sugestao != null) {
-          _sugestaoCatalogo = (
-            nome: sugestao.nome,
-            categoria: sugestao.categoria,
-          );
-          _marcaCatalogo = sugestao.marca;
-          _fonteCatalogo = sugestao.fonte;
-        } else if (local == null) {
+        if (sugestao == null) {
           _mensagemConsulta =
-              'Código sem sugestão. Você pode cadastrar manualmente.';
+              'Produto não encontrado. Complete o cadastro manualmente.';
+          return;
         }
+        final produto = (nome: sugestao.nome, categoria: sugestao.categoria);
+        _sugestaoCatalogo = produto;
+        _marcaCatalogo = sugestao.marca;
+        _fonteCatalogo = sugestao.fonte;
+        _preencherAutomaticamente(produto);
       });
     } on Exception {
       if (!mounted || consulta != _consultaCatalogo) return;
       setState(() {
         _buscandoCatalogo = false;
         _mensagemConsulta =
-            'Consulta indisponível. Você pode cadastrar manualmente.';
+            'Consulta indisponível. Complete o cadastro ou tente novamente.';
       });
     }
   }
@@ -241,7 +270,6 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     setState(() {
       _codigo.text = c;
       _sugestaoCatalogo = null;
-      _sugestaoLocal = null;
     });
     await _consultarCatalogo(c, online: true);
   }
@@ -250,7 +278,6 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     setState(() {
       _nome.text = CatalogoLocal.formatarNome(sugestao.nome);
       _categoria.text = sugestao.categoria;
-      _sugestaoLocal = null;
       _sugestaoCatalogo = null;
     });
   }
@@ -441,8 +468,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                       semanticsLabel: 'Consultando catálogo',
                     ),
                   )
-                else if (_podeBuscarOnline &&
-                    _fonteCatalogo == 'Catálogo local')
+                else if (_podeBuscarOnline && _sugestaoCatalogo == null)
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
@@ -452,36 +478,26 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                       label: const Text('Buscar no catálogo online'),
                     ),
                   ),
-                if (_mensagemConsulta != null) Text(_mensagemConsulta!),
-                if (_sugestaoLocal case final local?)
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      InputChip(
-                        label: Text('Banco local: ' + local.nome),
-                        onPressed: () => _aplicarSugestao(local),
-                      ),
-                      if (_sugestaoCatalogo case final online?)
-                        ActionChip(
-                          label: const Text('Combinar banco e API'),
-                          onPressed: () {
-                            final medida = RegExp(
-                              r'\b\d+(?:[,.]\d+)?\s*(kg|g|mg|ml|cl|l|un|oz|lb)\b',
-                              caseSensitive: false,
-                            ).firstMatch(online.nome)?.group(0);
-                            _aplicarSugestao((
-                              nome: CatalogoLocal.formatarNome(
-                                local.nome,
-                                medida,
-                              ),
-                              categoria: local.categoria == 'Outros'
-                                  ? online.categoria
-                                  : local.categoria,
-                            ));
-                          },
+                if (widget.vincularProduto != null)
+                  TextButton(
+                    onPressed: () async {
+                      final codigo = codigoDeProduto(_codigo.text);
+                      if (codigo == null) return;
+                      final produto = await widget.vincularProduto!(context);
+                      if (!mounted || produto == null) return;
+                      Navigator.pushReplacement<void, void>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProdutoFormScreen(
+                            produto: produto,
+                            codigoInicial: codigo,
+                          ),
                         ),
-                    ],
+                      );
+                    },
+                    child: const Text('Vincular a produto sem código'),
                   ),
+                if (_mensagemConsulta != null) Text(_mensagemConsulta!),
                 if (_sugestaoCatalogo case final sugestao?)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
@@ -505,7 +521,6 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                           );
                           _categoria.text = sugestao.categoria;
                           _sugestaoCatalogo = null;
-                          _sugestaoLocal = null;
                         }),
                       ),
                     ),

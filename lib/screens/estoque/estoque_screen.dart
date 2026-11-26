@@ -211,7 +211,10 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                     suffixIcon: IconButton(
                       tooltip: 'Escanear código de barras',
                       icon: const Icon(Icons.qr_code_scanner),
-                      onPressed: () => escanearEAbrir(context),
+                      onPressed: () => escanearEAbrir(
+                        context,
+                        lojaInicial: widget.loja == true,
+                      ),
                     ),
                   ),
                 ),

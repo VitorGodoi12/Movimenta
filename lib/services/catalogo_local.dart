@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:stokio/services/armazenamento.dart';
+import 'package:stokio/services/categorias_mercado.dart';
 import 'package:stokio/utils/codigo_produto.dart';
 
 typedef ProdutoCatalogo = ({String nome, String categoria});
@@ -45,7 +46,7 @@ class CatalogoLocal {
 
   static Future<ProdutoCatalogo?> buscar(String codigo) async {
     final valor = codigo.trim();
-    if (!RegExp(r'^\d{8,14}$').hasMatch(valor)) return null;
+    if (!eGtin(valor)) return null;
     final confirmados = _confirmados()[chaveCodigoProduto(valor)];
     if (confirmados is List && confirmados.length == 2) {
       return (
@@ -61,11 +62,19 @@ class CatalogoLocal {
     final itens = jsonDecode(
       await rootBundle.loadString('assets/catalogo_inicial.json'),
     ) as List;
+    final planilha = jsonDecode(
+      await rootBundle.loadString('assets/catalogo_produtos.json'),
+    ) as Map<String, dynamic>;
     return {
       for (final linha in itens.cast<List<dynamic>>())
         chaveCodigoProduto(linha[0] as String): (
           nome: linha[1] as String,
           categoria: linha[2] as String,
+        ),
+      for (final item in planilha.entries)
+        item.key: (
+          nome: formatarNome(item.value as String),
+          categoria: categoriaExibida(item.value as String, 'Outros'),
         ),
     };
   }

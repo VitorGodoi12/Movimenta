@@ -5,7 +5,10 @@ import 'package:stokio/screens/estoque/produto_form_screen.dart';
 import 'package:stokio/screens/scanner/scanner_screen.dart';
 import 'package:stokio/services/estoque_service.dart';
 
-Future<void> escanearEAbrir(BuildContext context) async {
+Future<void> escanearEAbrir(
+  BuildContext context, {
+  bool lojaInicial = false,
+}) async {
   final codigo = await lerCodigo(context);
   if (codigo == null || !context.mounted) return;
 
@@ -21,36 +24,16 @@ Future<void> escanearEAbrir(BuildContext context) async {
   final semCodigo =
       estoque.produtos.where((p) => p.codigoBarras?.isNotEmpty != true).toList()
         ..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
-  final novo = await showDialog<bool>(
-    context: context,
-    builder: (dialogo) => AlertDialog(
-      title: const Text('Código ainda sem produto'),
-      content: Text('Código $codigo'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogo),
-          child: const Text('Cancelar'),
-        ),
-        if (semCodigo.isNotEmpty)
-          TextButton(
-            onPressed: () => Navigator.pop(dialogo, false),
-            child: const Text('Vincular a produto'),
-          ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialogo, true),
-          child: const Text('Cadastrar novo'),
-        ),
-      ],
-    ),
-  );
-  if (novo == null || !context.mounted) return;
-  final existente = novo ? null : await _escolherProduto(context, semCodigo);
-  if (!context.mounted || (!novo && existente == null)) return;
-  await Navigator.push(
+  await Navigator.push<void>(
     context,
     MaterialPageRoute(
-      builder: (_) =>
-          ProdutoFormScreen(produto: existente, codigoInicial: codigo),
+      builder: (_) => ProdutoFormScreen(
+        codigoInicial: codigo,
+        lojaInicial: lojaInicial,
+        vincularProduto: semCodigo.isEmpty
+            ? null
+            : (context) => _escolherProduto(context, semCodigo),
+      ),
     ),
   );
 }

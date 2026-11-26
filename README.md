@@ -62,6 +62,12 @@ Escolha Claro, Escuro ou Seguir o aparelho em **Mais → Configurações e backu
 
 No cadastro e na revisão de listas, use a busca pelo nome para conferir sugestões do Open Food Facts. Se escolher uma sugestão na importação, o produto recebe o nome e o código selecionados. Ajuste a contagem antes de confirmar. A busca por nome envia somente a descrição consultada e funciona no Android com internet.
 
+## Catálogo local do Movimenta
+
+O catálogo incluído contém 3.437 códigos únicos do CSV fornecido para o projeto. As linhas sem código ficaram fora dessa base. Os códigos mantêm os zeros de preenchimento para combinar leituras EAN e GS1 Digital Link.
+
+Ao ler um código pelo cadastro, o Movimenta preenche os dados disponíveis no aparelho. Se o código ainda não existir no catálogo, consulta o Open Food Facts e o Open Beauty Facts. Se os catálogos não encontrarem um resultado, o código permanece no cadastro manual. O usuário confirma e pode corrigir os dados antes de salvar.
+
 ## Compilar e testar
 
 ```sh
