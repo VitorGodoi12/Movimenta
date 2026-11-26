@@ -7,7 +7,7 @@ enum SituacaoValidade { semData, ok, vencendo, vencido }
 class Produto {
   Produto({
     required this.id,
-    required this.nome,
+    required String nome,
     required this.categoria,
     required int quantidade,
     required this.minimo,
@@ -23,7 +23,8 @@ class Produto {
     int? saldoLoja,
     this.local,
     this.fornecedorId,
-  }) : _lotes = lotes ?? {if (quantidade > 0) validade: quantidade},
+  }) : _nome = nome.trim().toUpperCase(),
+       _lotes = lotes ?? {if (quantidade > 0) validade: quantidade},
        _validadeInicial = validade {
     _saldoLoja = (saldoLoja ?? (naLoja ? this.quantidade : 0)).clamp(
       0,
@@ -32,7 +33,9 @@ class Produto {
   }
 
   final String id;
-  String nome;
+  String _nome;
+  String get nome => _nome;
+  set nome(String novo) => _nome = novo.trim().toUpperCase();
   String categoria;
   final Map<DateTime?, int> _lotes;
   DateTime? _validadeInicial;

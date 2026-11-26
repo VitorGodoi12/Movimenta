@@ -46,8 +46,8 @@ void main() {
   test('Normaliza o nome e a medida da sugestão', () {
     expect(
       CatalogoLocal.formatarNome('REFRIGERANTE COLA', '2L'),
-      'Refrigerante cola 2 L',
+      'REFRIGERANTE COLA 2 L',
     );
-    expect(CatalogoLocal.formatarNome('CAFÉ 500G', '500 g'), 'Café 500 g');
+    expect(CatalogoLocal.formatarNome('CAFÉ 500G', '500 g'), 'CAFÉ 500 G');
   });
 }

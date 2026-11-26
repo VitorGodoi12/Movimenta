@@ -16,7 +16,7 @@ void main() {
     final gs1 = codigoDeProduto('https://id.gs1.org/01/07896005801512');
     expect(gs1, '07896005801512');
     final doBanco = await tester.runAsync(() => CatalogoLocal.buscar(gs1!));
-    expect(doBanco?.nome, 'Café 3 corações ext forte 250 g');
+    expect(doBanco?.nome, 'CAFÉ 3 CORAÇÕES EXT FORTE 250 G');
 
     await tester.pumpWidget(
       const MaterialApp(home: ProdutoFormScreen(codigoInicial: codigo)),

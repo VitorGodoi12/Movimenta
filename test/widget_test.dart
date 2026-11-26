@@ -104,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(estoque.produtos, hasLength(2));
     expect(
-      estoque.produtos.firstWhere((p) => p.nome == 'salsicha').quantidade,
+      estoque.produtos.firstWhere((p) => p.nome == 'SALSICHA').quantidade,
       12,
     );
     expect(find.text('Cervejas'), findsWidgets);

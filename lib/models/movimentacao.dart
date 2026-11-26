@@ -19,7 +19,7 @@ class Movimentacao {
   const Movimentacao({
     required this.id,
     required this.produtoId,
-    required this.produtoNome,
+    required String produtoNome,
     required this.tipo,
     required this.delta,
     required this.data,
@@ -27,11 +27,12 @@ class Movimentacao {
     this.pagamento,
     this.deltaLoja,
     this.lotes = const {},
-  });
+  }) : _produtoNome = produtoNome;
 
   final String id;
   final String produtoId;
-  final String produtoNome;
+  final String _produtoNome;
+  String get produtoNome => _produtoNome.toUpperCase();
   final TipoMovimento tipo;
 
   /// Variação real no estoque: positiva na entrada, negativa na saída.

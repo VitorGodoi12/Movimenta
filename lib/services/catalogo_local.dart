@@ -17,7 +17,10 @@ class CatalogoLocal {
 
   static Future<void> recordar(String codigo, ProdutoCatalogo produto) async {
     final dados = _confirmados();
-    dados[chaveCodigoProduto(codigo)] = [produto.nome, produto.categoria];
+    dados[chaveCodigoProduto(codigo)] = [
+      produto.nome.trim().toUpperCase(),
+      produto.categoria,
+    ];
     await Armazenamento.gravar(_chave, jsonEncode(dados));
   }
 
@@ -30,17 +33,17 @@ class CatalogoLocal {
         unidade.firstMatch(medida ?? '') ?? unidade.firstMatch(nome);
     final limpo = nome.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (limpo.isEmpty) return '';
-    final texto = limpo[0].toUpperCase() + limpo.substring(1).toLowerCase();
+    final texto = limpo.toUpperCase();
     if (embalagem == null) return texto;
     final temMedidaNoNome = unidade.firstMatch(texto);
-    final sufixo = embalagem[2]!.toLowerCase();
-    final tamanho = embalagem[1]! + ' ' + (sufixo == 'l' ? 'L' : sufixo);
+    final sufixo = embalagem[2]!.toUpperCase();
+    final tamanho = embalagem[1]! + ' ' + sufixo;
     if (temMedidaNoNome == null) return '$texto $tamanho';
-    final sigla = temMedidaNoNome[2]!.toLowerCase();
+    final sigla = temMedidaNoNome[2]!.toUpperCase();
     return texto.replaceRange(
       temMedidaNoNome.start,
       temMedidaNoNome.end,
-      temMedidaNoNome[1]! + ' ' + (sigla == 'l' ? 'L' : sigla),
+      temMedidaNoNome[1]! + ' ' + sigla,
     );
   }
 
@@ -50,7 +53,7 @@ class CatalogoLocal {
     final confirmados = _confirmados()[chaveCodigoProduto(valor)];
     if (confirmados is List && confirmados.length == 2) {
       return (
-        nome: confirmados[0] as String,
+        nome: (confirmados[0] as String).toUpperCase(),
         categoria: confirmados[1] as String,
       );
     }
@@ -68,7 +71,7 @@ class CatalogoLocal {
     return {
       for (final linha in itens.cast<List<dynamic>>())
         chaveCodigoProduto(linha[0] as String): (
-          nome: linha[1] as String,
+          nome: formatarNome(linha[1] as String),
           categoria: linha[2] as String,
         ),
       for (final item in planilha.entries)

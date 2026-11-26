@@ -528,7 +528,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 const SizedBox(height: 14),
                 TextFormField(
                   controller: _nome,
-                  textCapitalization: TextCapitalization.sentences,
+                  textCapitalization: TextCapitalization.characters,
                   decoration: const InputDecoration(
                     labelText: 'Nome do produto',
                   ),
