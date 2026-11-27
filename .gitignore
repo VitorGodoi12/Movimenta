@@ -55,3 +55,9 @@ app.*.map.json
 
 # Kotlin Gradle compiler state
 /android/.kotlin/
+
+# Firebase CLI e ambiente local de teste
+/firebase/functions/node_modules/
+/.firebase/
+firebase-debug.log*
+firestore-debug.log*

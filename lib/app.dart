@@ -1,3 +1,5 @@
+import 'package:stokio/services/mercado_firebase.dart';
+import 'package:stokio/screens/login/acesso_mercado_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:stokio/screens/login/boas_vindas_screen.dart';
@@ -27,7 +29,9 @@ class StokioApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         home: _EntradaMovimenta(
-          child: perfil.cliente == null
+          child: MercadoFirebase.habilitado
+              ? const AcessoMercadoScreen()
+              : perfil.cliente == null
               ? const BoasVindasScreen()
               : const ShellScreen(),
         ),

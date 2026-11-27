@@ -1,3 +1,4 @@
+import 'package:stokio/services/mercado_firebase.dart';
 import 'package:stokio/theme/tema_preferencia.dart';
 import 'package:flutter/material.dart';
 import 'package:stokio/app.dart';
@@ -12,6 +13,7 @@ Future<void> main() async {
   TemaPreferencia.carregar();
   await perfil.carregar();
   await estoque.carregar();
-  Notificacoes.iniciar();
+  if (!MercadoFirebase.habilitado) Notificacoes.iniciar();
+  await MercadoFirebase.iniciar();
   runApp(const StokioApp());
 }

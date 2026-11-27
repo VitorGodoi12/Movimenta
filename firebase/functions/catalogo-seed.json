@@ -1,0 +1,212 @@
+[
+  {
+    "codigoBarras": "07896894900068",
+    "nome": "AÇÚCAR CRIST COLOMBO 1KG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07897844304455",
+    "nome": "AÇÚCAR CRISTAL CHEF 1KG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898187830014",
+    "nome": "AÇÚCAR CRISTAL SANTA ISABEL 1KG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896006711117",
+    "nome": "ARROZ CAMIL TP1 1KG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896006711155",
+    "nome": "ARROZ CAMIL TP1 SEG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896401100325",
+    "nome": "ARROZ MAKI TP1 SKC",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896005800027",
+    "nome": "CAFÉ 3 CORAÇÕES 250G TRAD STAND PAC",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896005801512",
+    "nome": "CAFÉ 3 CORAÇÕES EXT FORTE 250G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896005801529",
+    "nome": "CAFÉ 3 CORAÇÕES EXT FORTE 500G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07894900029628",
+    "nome": "COCA COLA ZERO CAFEINA LT 350ML",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07894900027068",
+    "nome": "COCA-COLA ORIGINAL PET 2,25L",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07899999999517",
+    "nome": "COCADA BRANCA CASEIRA",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "00606529154264",
+    "nome": "COCADA BRANCA ITAMAR 50G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898954797038",
+    "nome": "COCADA GENINHO 50G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898693231282",
+    "nome": "CREME DE AVELA TERRINHA 140G | [T",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898416525179",
+    "nome": "CREME DE CEBOLA KISABOR €SG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896706304275",
+    "nome": "CREME DE CEBOLA NEILAR 60G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898276600108",
+    "nome": "FEIJÃO CALDO NOBRELKG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896200115346",
+    "nome": "FEIJÃO CARIOCA BROTO LEGAL 1KG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896006744115",
+    "nome": "FEIJÃO CARIOCA CAMIL 1KG",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896016601408",
+    "nome": "LEITE COCO DUCOCO 200ML",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898904099700",
+    "nome": "LEITE COCO ESPECIAL COCO CIA 20M",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898406780717",
+    "nome": "LEITE COCO SERIGY 200ML",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898286190361",
+    "nome": "MOLHO ALHO GOTAISOML",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898902719181",
+    "nome": "MOLHO ALHO KOZZY 150ML",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898075644020",
+    "nome": "MOLHO BARBECUE C BELO 200G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896235354017",
+    "nome": "ÓLEO AMENDOAS PAIXAO INSPIRAD 100ML",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896096041651",
+    "nome": "ÓLEO COMPOSTO CARMELITA 500ML",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07908435500078",
+    "nome": "ÓLEO COMPOSTO FAISAO 200ML",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898958607036",
+    "nome": "PAPEL ALUM LIFE CLEAR 30CMI4N",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07898953979169",
+    "nome": "PAPEL ALUMINIO SUPREMO 30X3M",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896519000500",
+    "nome": "PAPEL ALUMINIO WYDA 3OCMX7, 5M { [<",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896098906026",
+    "nome": "SABÃO BARRA YPE FLORES/FRUTAS 180G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896098905913",
+    "nome": "SABÃO BARRA YPE NEUTRO 180G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  },
+  {
+    "codigoBarras": "07896075910060",
+    "nome": "SABÃO PASTA DIPOL S00G",
+    "categoria": "Outros",
+    "fonte": "produtos_com_codigos_de_barras.csv"
+  }
+]

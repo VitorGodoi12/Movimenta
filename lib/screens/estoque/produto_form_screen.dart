@@ -1,3 +1,10 @@
+import 'package:stokio/models/entrada_mercado.dart';
+import 'package:stokio/models/foto_cadastro.dart';
+import 'package:stokio/models/movimentacao.dart';
+import 'package:stokio/screens/estoque/catalogo_produtos_screen.dart';
+import 'package:stokio/services/leitura_foto.dart';
+import 'package:stokio/utils/formatadores.dart';
+import 'package:stokio/widgets/ficha_fotos.dart';
 import 'package:stokio/widgets/cartao_painel.dart';
 import 'package:stokio/utils/codigo_produto.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +26,7 @@ class ProdutoFormScreen extends StatefulWidget {
   const ProdutoFormScreen({
     super.key,
     this.produto,
+    this.confirmarMercado,
     this.codigoInicial,
     this.vincularProduto,
     this.lojaInicial = false,
@@ -26,6 +34,7 @@ class ProdutoFormScreen extends StatefulWidget {
 
   final bool lojaInicial;
   final Produto? produto;
+  final Future<bool> Function(EntradaMercado)? confirmarMercado;
 
   /// Código lido pelo scanner para preencher o formulário.
   final String? codigoInicial;
@@ -43,6 +52,11 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   bool _buscandoCatalogo = false;
   String _fonteCatalogo = 'Catálogo local';
   int _consultaCatalogo = 0;
+  final _fotos = <FinalidadeFoto, FotoCadastro>{};
+  bool _lendoFoto = false;
+  bool _salvandoFicha = false;
+  bool _publicarCatalogo = false;
+  String? _validadeLida;
   String? _codigoConsultado;
   String? _nomeAutomatico;
   String? _categoriaAutomatica;
@@ -81,7 +95,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
         online &&
         OpenFoodFacts.disponivel &&
         gtin &&
-        estoque.porCodigo(codigo) == null;
+        (widget.confirmarMercado != null || estoque.porCodigo(codigo) == null);
     setState(() {
       if (_codigoConsultado != codigo) {
         if (_nome.text == _nomeAutomatico) _nome.clear();
@@ -97,7 +111,29 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       _buscandoCatalogo = buscarOnline;
     });
 
-    if (!gtin || estoque.porCodigo(codigo) != null) return;
+    final existente = widget.confirmarMercado == null
+        ? estoque.porCodigo(codigo)
+        : null;
+    if (existente != null) {
+      setState(() {
+        _preencherAutomaticamente((
+          nome: existente.nome,
+          categoria: existente.categoria,
+        ));
+        if (_preco.text.trim().isEmpty)
+          _preco.text = _dinheiro(existente.preco);
+        if (_custo.text.trim().isEmpty)
+          _custo.text = _dinheiro(existente.custo);
+        if (_minimo.text.trim().isEmpty)
+          _minimo.text = existente.minimo.toString();
+        _unidade.text = existente.unidade;
+        _buscandoCatalogo = false;
+        _mensagemConsulta =
+            'Produto existente. A confirmação vai incluir uma nova entrada.';
+      });
+      return;
+    }
+    if (!gtin) return;
     ProdutoCatalogo? local;
     try {
       local = await CatalogoLocal.buscar(codigo);
@@ -259,6 +295,7 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     if (codigoDeProduto(c) == null) {
       return 'Use o código da embalagem, sem link.';
     }
+    if (!_editando) return null;
     return estoque.codigoEmUso(c, exceto: widget.produto?.id)
         ? 'Este código já está em outro produto.'
         : null;
@@ -267,11 +304,175 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   Future<void> _escanear() async {
     final c = await lerCodigo(context);
     if (c == null || !mounted) return;
+    if (!await _confirmarTrocaCodigo(c) || !mounted) return;
     setState(() {
       _codigo.text = c;
       _sugestaoCatalogo = null;
     });
     await _consultarCatalogo(c, online: true);
+  }
+
+  Future<bool> _confirmarTrocaCodigo(String novo) async {
+    final atual = _codigo.text.trim();
+    if (atual.isEmpty || atual == novo) return true;
+    return await _escolher('Substituir o código atual?', [
+          true,
+        ], (_) => 'Usar ' + novo) ==
+        true;
+  }
+
+  Future<T?> _escolher<T>(
+    String titulo,
+    List<T> opcoes,
+    String Function(T) rotulo,
+  ) {
+    return showDialog<T>(
+      context: context,
+      builder: (dialogo) => SimpleDialog(
+        title: Text(titulo),
+        children: [
+          for (final opcao in opcoes)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogo, opcao),
+              child: Text(rotulo(opcao)),
+            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogo),
+            child: const Text('Manter como está'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _abrirCatalogo([String busca = '']) async {
+    final produto = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CatalogoProdutosScreen(buscaInicial: busca),
+      ),
+    );
+    if (!mounted || produto == null) return;
+    final novo = produto as ({String codigo, String nome, String categoria});
+    final jaPreenchido =
+        _nome.text.trim().isNotEmpty || _codigo.text.trim().isNotEmpty;
+    if (jaPreenchido &&
+        await _escolher('Substituir os dados de identificação?', [
+              true,
+            ], (_) => 'Usar este produto') !=
+            true)
+      return;
+    if (!mounted) return;
+    ++_consultaCatalogo;
+    setState(() {
+      _codigo.text = novo.codigo;
+      _nome.text = novo.nome;
+      _categoria.text = novo.categoria;
+      _buscandoCatalogo = false;
+      _sugestaoCatalogo = null;
+      _mensagemConsulta = 'Código encontrado no catálogo';
+    });
+  }
+
+  Future<void> _calcularVolumes() async {
+    final resultado = await showDialog<(int, int)>(
+      context: context,
+      builder: (_) => const _ConversaoVolumes(),
+    );
+    if (!mounted || resultado == null) return;
+    final (volumes, fator) = resultado;
+    final loja = _areas.length == 1
+        ? _areas.single
+        : await _escolher('Destino destas unidades', [
+            false,
+            true,
+          ], (valor) => valor ? 'Loja' : 'Estoque');
+    if (!mounted || loja == null) return;
+    final alvo = loja ? _quantidadeLoja : _quantidade;
+    if (alvo.text.trim().isNotEmpty &&
+        await _escolher('Substituir a quantidade deste destino?', [
+              true,
+            ], (_) => 'Usar total de unidades') !=
+            true)
+      return;
+    if (!mounted) return;
+    setState(() {
+      alvo.text = (volumes * fator).toString();
+      _unidade.text = 'un';
+    });
+  }
+
+  Future<void> _fotografar(FinalidadeFoto finalidade) async {
+    if (_lendoFoto) return;
+    setState(() => _lendoFoto = true);
+    try {
+      final foto = await LeituraFoto.capturar(finalidade);
+      if (!mounted || foto == null) return;
+      setState(() => _fotos[finalidade] = foto);
+      if (finalidade == FinalidadeFoto.produto) {
+        if (foto.codigos.isNotEmpty) {
+          final codigo = await _escolher(
+            'Código lido na foto',
+            foto.codigos,
+            (c) => c,
+          );
+          if (!mounted || codigo == null) return;
+          if (!await _confirmarTrocaCodigo(codigo) || !mounted) return;
+          _codigo.text = codigo;
+          await _consultarCatalogo(codigo, online: true);
+        } else if (foto.consulta.isNotEmpty) {
+          await _abrirCatalogo(foto.consulta);
+        } else {
+          _aviso('Produto ilegível. Fotografe outra face ou digite o código.');
+        }
+        if (mounted && foto.unidadesPorVolume != null) {
+          final unidades = foto.unidadesPorVolume!;
+          final embalagem = await _escolher(
+            'A foto sugere $unidades unidades por embalagem',
+            ['Caixa', 'Fardo'],
+            (valor) => valor,
+          );
+          if (!mounted) return;
+          if (embalagem == 'Caixa') _caixa.text = unidades.toString();
+          if (embalagem == 'Fardo') _fardo.text = unidades.toString();
+        }
+      }
+      if (finalidade != FinalidadeFoto.preco && foto.validades.isNotEmpty) {
+        final data = await _escolher(
+          'Conferir validade sugerida',
+          foto.validades,
+          (v) => v.rotulo,
+        );
+        if (mounted && data != null) {
+          setState(() {
+            _validadeInicial = data.data;
+            _validadeLida = data.rotulo;
+            _semValidade = false;
+          });
+        }
+      } else if (finalidade == FinalidadeFoto.validade) {
+        _aviso('Validade ilegível. Tire outra foto ou digite a data.');
+      }
+      if (!mounted) return;
+      if (finalidade != FinalidadeFoto.validade && foto.precos.isNotEmpty) {
+        final preco = await _escolher(
+          'Conferir preço de venda',
+          foto.precos,
+          (p) => formatarPreco(p.valor) + ' · ' + p.trecho,
+        );
+        if (mounted && preco != null)
+          setState(() => _preco.text = _dinheiro(preco.valor));
+      } else if (finalidade == FinalidadeFoto.preco) {
+        _aviso('Preço ilegível. Tire outra foto ou digite o valor.');
+      }
+    } on Exception {
+      if (mounted)
+        _aviso(
+          'Não foi possível analisar a foto. Confira a permissão da câmera ou digite os dados.',
+        );
+    } finally {
+      if (mounted) setState(() => _lendoFoto = false);
+    }
   }
 
   void _aplicarSugestao(ProdutoCatalogo sugestao) {
@@ -286,7 +487,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 
-  void _salvar() {
+  Future<void> _salvar() async {
+    if (_salvandoFicha) return;
     if (!_chave.currentState!.validate()) return;
 
     final preco = _lerValor(_preco.text)!;
@@ -337,6 +539,80 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       lotes.update(data, (saldo) => saldo + semData, ifAbsent: () => semData);
     }
 
+    var restanteLoja = saldoLoja;
+    final entradas = <LoteMercado>[];
+    for (final lote in lotes.entries) {
+      final naLoja = lote.value < restanteLoja ? lote.value : restanteLoja;
+      if (naLoja > 0)
+        entradas.add((validade: lote.key, quantidade: naLoja, naLoja: true));
+      final noEstoque = lote.value - naLoja;
+      if (noEstoque > 0)
+        entradas.add((
+          validade: lote.key,
+          quantidade: noEstoque,
+          naLoja: false,
+        ));
+      restanteLoja -= naLoja;
+    }
+    if (widget.confirmarMercado case final confirmar?) {
+      if (entradas.isEmpty) {
+        _aviso('Informe a quantidade da entrada.');
+        return;
+      }
+      setState(() => _salvandoFicha = true);
+      try {
+        final sincronizado = await confirmar(
+          EntradaMercado(
+            codigo: codigo,
+            nome: _nome.text.trim(),
+            categoria: _categoria.text.trim(),
+            unidade: _unidade.text.trim(),
+            preco: preco,
+            lotes: entradas,
+            publicarNoCatalogo: _publicarCatalogo,
+          ),
+        );
+        if (mounted) {
+          _aviso(
+            sincronizado
+                ? 'Entrada sincronizada.'
+                : 'Salvo no dispositivo, aguardando sincronização.',
+          );
+          Navigator.pop(context);
+        }
+      } catch (_) {
+        if (mounted)
+          _aviso(
+            'Não foi possível confirmar. Confira seu acesso, os campos ou a conexão.',
+          );
+      } finally {
+        if (mounted) setState(() => _salvandoFicha = false);
+      }
+      return;
+    }
+    final anterior = !_editando && codigo != null
+        ? estoque.porCodigo(codigo)
+        : null;
+    if (anterior != null) {
+      if (entradas.isEmpty || anterior.unidade != _unidade.text.trim()) {
+        _aviso(
+          'Informe uma quantidade e use a unidade do produto já cadastrado.',
+        );
+        return;
+      }
+      for (final entrada in entradas) {
+        estoque.movimentar(
+          anterior,
+          TipoMovimento.entrada,
+          entrada.quantidade,
+          validade: entrada.validade,
+          naLoja: entrada.naLoja,
+          motivo: Motivos.compra,
+        );
+      }
+      Navigator.pop(context);
+      return;
+    }
     if (_editando) {
       final p = widget.produto!;
       p
@@ -389,7 +665,9 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final apenasNumeros = [FilteringTextInputFormatter.digitsOnly];
-    final sugestoes = estoque.categorias.take(6).toList();
+    final sugestoes = widget.confirmarMercado == null
+        ? estoque.categorias.take(6).toList()
+        : const <String>[];
     final decimal = const TextInputType.numberWithOptions(decimal: true);
 
     Widget secao(IconData icone, String titulo, List<Widget> campos) => Padding(
@@ -423,9 +701,15 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(18, 8, 18, 12),
         child: FilledButton.icon(
-          onPressed: _salvar,
+          onPressed: _lendoFoto || _salvandoFicha ? null : _salvar,
           icon: const Icon(Icons.check),
-          label: Text(_editando ? 'Salvar alterações' : 'Salvar produto'),
+          label: Text(
+            _editando
+                ? 'Salvar alterações'
+                : widget.confirmarMercado != null
+                ? 'Confirmar entrada'
+                : 'Salvar produto',
+          ),
         ),
       ),
       body: Form(
@@ -435,6 +719,15 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              secao(Icons.document_scanner_outlined, 'Preencher ficha', [
+                FichaFotos(
+                  fotos: _fotos,
+                  ocupado: _lendoFoto,
+                  capturar: _fotografar,
+                  catalogo: _abrirCatalogo,
+                  bipar: _escanear,
+                ),
+              ]),
               secao(Icons.inventory_2_outlined, 'Identificação', [
                 TextFormField(
                   controller: _codigo,
@@ -554,7 +847,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                           children: [
                             for (final categoria in {
                               ...categoriasMercado,
-                              ...estoque.categorias,
+                              if (widget.confirmarMercado == null)
+                                ...estoque.categorias,
                             })
                               SimpleDialogOption(
                                 onPressed: () =>
@@ -610,6 +904,12 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ),
               ]),
               secao(Icons.swap_horiz_rounded, 'Quantidades e destino', [
+                if (!_editando)
+                  TextButton.icon(
+                    onPressed: _calcularVolumes,
+                    icon: const Icon(Icons.calculate_outlined),
+                    label: const Text('Calcular unidades de caixas ou fardos'),
+                  ),
                 SegmentedButton<bool>(
                   multiSelectionEnabled: true,
                   showSelectedIcon: false,
@@ -746,6 +1046,8 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                 const SizedBox(height: 12),
               ]),
               secao(Icons.event_outlined, 'Lotes e validades', [
+                if (_validadeLida != null)
+                  Text('Impressão conferida: ' + _validadeLida!),
                 if (!_editando) ...[
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
@@ -758,7 +1060,10 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                     CampoData(
                       rotulo: 'Validade principal',
                       valor: _validadeInicial,
-                      aoMudar: (data) => _validadeInicial = data,
+                      aoMudar: (data) => setState(() {
+                        _validadeInicial = data;
+                        _validadeLida = null;
+                      }),
                     ),
                 ],
                 const Text(
@@ -845,27 +1150,37 @@ class _ProdutoFormScreenState extends State<ProdutoFormScreen> {
                   ],
                 ),
               ]),
-              secao(Icons.local_shipping_outlined, 'Compras', [
-                DropdownButtonFormField<String?>(
-                  value: _fornecedorId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Fornecedor (opcional)',
+              if (widget.confirmarMercado != null)
+                CheckboxListTile(
+                  title: const Text(
+                    'Compartilhar a identificação no catálogo global',
                   ),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('Nenhum'),
-                    ),
-                    for (final f in estoque.fornecedores)
-                      DropdownMenuItem<String?>(
-                        value: f.id,
-                        child: Text(f.nome, overflow: TextOverflow.ellipsis),
-                      ),
-                  ],
-                  onChanged: (v) => setState(() => _fornecedorId = v),
+                  value: _publicarCatalogo,
+                  onChanged: (valor) =>
+                      setState(() => _publicarCatalogo = valor ?? false),
                 ),
-              ]),
+              if (widget.confirmarMercado == null)
+                secao(Icons.local_shipping_outlined, 'Compras', [
+                  DropdownButtonFormField<String?>(
+                    value: _fornecedorId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Fornecedor (opcional)',
+                    ),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Nenhum'),
+                      ),
+                      for (final f in estoque.fornecedores)
+                        DropdownMenuItem<String?>(
+                          value: f.id,
+                          child: Text(f.nome, overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _fornecedorId = v),
+                  ),
+                ]),
             ],
           ),
         ),
@@ -879,4 +1194,65 @@ class _LoteEditavel {
 
   DateTime? data;
   int quantidade;
+}
+
+class _ConversaoVolumes extends StatefulWidget {
+  const _ConversaoVolumes();
+  @override
+  State<_ConversaoVolumes> createState() => _ConversaoVolumesState();
+}
+
+class _ConversaoVolumesState extends State<_ConversaoVolumes> {
+  int _volumes = 0;
+  int _fator = 0;
+  int get _total => _volumes * _fator;
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Conversão de embalagem'),
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Quantidade de volumes',
+            ),
+            onChanged: (texto) =>
+                setState(() => _volumes = int.tryParse(texto) ?? 0),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(5),
+            ],
+            decoration: const InputDecoration(labelText: 'Unidades por volume'),
+            onChanged: (texto) =>
+                setState(() => _fator = int.tryParse(texto) ?? 0),
+          ),
+          const SizedBox(height: 12),
+          Text('Total de unidades: $_total'),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton(
+        onPressed: _total > 0 && _total <= 999999999
+            ? () => Navigator.pop(context, (_volumes, _fator))
+            : null,
+        child: const Text('Usar unidades'),
+      ),
+    ],
+  );
 }

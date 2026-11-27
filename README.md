@@ -77,3 +77,7 @@ flutter build apk --release
 ```
 
 O APK fica em `build/app/outputs/flutter-apk/app-release.apk`. A configuração atual usa a chave de desenvolvimento para instalação direta. Para publicar na Play Store, configure uma chave de produção.
+
+## Cadastro por foto e mercado compartilhado
+
+Consulte [a configuração do Firebase e o roteiro de teste no Android](docs/firebase.md).

@@ -47,6 +47,14 @@ class _CampoDataState extends State<CampoData> {
   }
 
   @override
+  void didUpdateWidget(covariant CampoData anterior) {
+    super.didUpdateWidget(anterior);
+    if (anterior.valor != widget.valor && _ler(_texto.text) != widget.valor) {
+      _texto.text = widget.valor == null ? '' : formatarData(widget.valor!);
+    }
+  }
+
+  @override
   void dispose() {
     _texto.dispose();
     super.dispose();

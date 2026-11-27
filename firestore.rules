@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function autenticado() { return request.auth != null; }
+    function perfil() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function ativo(mercado) {
+      return autenticado() && perfil().mercadoId == mercado && perfil().status == 'ativo';
+    }
+    function administra(mercado) {
+      return ativo(mercado) && perfil().cargo in ['dono', 'gerente'];
+    }
+    match /users/{uid} {
+      allow read: if autenticado() && (uid == request.auth.uid ||
+        administra(resource.data.mercadoId));
+      allow write: if false;
+    }
+    match /mercados/{mercado} {
+      allow get: if ativo(mercado);
+      allow list, write: if false;
+      match /corredores/{corredor} {
+        function responsavelValido() {
+          let id = request.resource.data.get('funcionarioResponsavelId', '');
+          return id == '' || (
+            get(/databases/$(database)/documents/users/$(id)).data.mercadoId == mercado &&
+            get(/databases/$(database)/documents/users/$(id)).data.status == 'ativo' &&
+            get(/databases/$(database)/documents/users/$(id)).data.nome ==
+              request.resource.data.funcionarioResponsavelNome
+          );
+        }
+        allow read: if ativo(mercado);
+        allow delete: if administra(mercado);
+        allow create, update: if administra(mercado) &&
+          request.resource.data.keys().hasOnly(['nome', 'funcionarioResponsavelId', 'funcionarioResponsavelNome']) &&
+          request.resource.data.nome is string &&
+          request.resource.data.nome.size() > 0 &&
+          request.resource.data.nome.size() <= 120 &&
+          responsavelValido();
+      }
+      match /produtos/{produto} {
+        allow read: if ativo(mercado) && (administra(mercado) || resource.data.naLoja == true);
+        allow create, delete: if false;
+        allow update: if (administra(mercado) || (ativo(mercado) && resource.data.naLoja == true)) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['preco', 'atualizadoEm']) &&
+          request.resource.data.preco is number && request.resource.data.preco >= 0 &&
+          request.resource.data.preco <= 9999999 &&
+          request.resource.data.atualizadoEm == request.time;
+        match /lotes/{lote} {
+          function naLoja() {
+            return get(/databases/$(database)/documents/mercados/$(mercado)/produtos/$(produto)).data.naLoja == true &&
+              resource.data.destino == 'loja';
+          }
+          allow read: if ativo(mercado) && (administra(mercado) || naLoja());
+          allow create, delete: if false;
+          allow update: if (administra(mercado) || (ativo(mercado) && naLoja())) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validade', 'atualizadoEm']) &&
+            (request.resource.data.validade == null || request.resource.data.validade is timestamp) &&
+            request.resource.data.atualizadoEm == request.time;
+        }
+      }
+    }
+    match /catalogo_produtos/{codigo} {
+      allow read: if autenticado();
+      allow write: if false;
+    }
+  }
+}

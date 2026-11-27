@@ -1,3 +1,5 @@
+import 'package:stokio/services/mercado_firebase.dart';
+
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -47,6 +49,19 @@ class CatalogoLocal {
     );
   }
 
+  static Future<Map<String, ProdutoCatalogo>> listar() async {
+    final base = await (_catalogo ??= _carregar());
+    return {
+      ...base,
+      for (final item in _confirmados().entries)
+        if (item.value is List && (item.value as List).length == 2)
+          item.key: (
+            nome: (item.value[0] as String).toUpperCase(),
+            categoria: item.value[1] as String,
+          ),
+    };
+  }
+
   static Future<ProdutoCatalogo?> buscar(String codigo) async {
     final valor = codigo.trim();
     if (!eGtin(valor)) return null;
@@ -58,7 +73,37 @@ class CatalogoLocal {
       );
     }
     final catalogo = await (_catalogo ??= _carregar());
-    return catalogo[chaveCodigoProduto(valor)];
+    final chave = chaveCodigoProduto(valor);
+    final salvo = catalogo[chave];
+    if (salvo != null ||
+        !MercadoFirebase.ativo ||
+        MercadoFirebase.auth.currentUser == null)
+      return salvo;
+    try {
+      final colecao = MercadoFirebase.banco.collection('catalogo_produtos');
+      final padronizado = await colecao
+          .doc(chave)
+          .get()
+          .timeout(const Duration(seconds: 4));
+      final encontrado = _doDocumento(padronizado.data());
+      if (encontrado != null || valor == chave) return encontrado;
+      final original = await colecao
+          .doc(valor)
+          .get()
+          .timeout(const Duration(seconds: 4));
+      return _doDocumento(original.data());
+    } on Exception {
+      return null;
+    }
+  }
+
+  static ProdutoCatalogo? _doDocumento(Map<String, dynamic>? dados) {
+    final nome = dados?['nome'];
+    if (nome is! String || nome.trim().isEmpty) return null;
+    return (
+      nome: formatarNome(nome, dados?['medida'] as String?),
+      categoria: dados?['categoria'] as String? ?? 'Outros',
+    );
   }
 
   static Future<Map<String, ProdutoCatalogo>> _carregar() async {
