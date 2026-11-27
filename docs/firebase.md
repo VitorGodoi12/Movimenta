@@ -2,7 +2,7 @@
 
 ## Modo local
 
-Na raiz, execute:
+Com Java 21 configurado no JAVA_HOME, execute na raiz:
 
     flutter pub get
     dart format lib test
@@ -14,7 +14,7 @@ O APK comum usa o modo local e preserva o armazenamento do aparelho. A ficha usa
 
 ## Vincular o Firebase
 
-1. Instale Flutter e Android SDK. Use Java 21 para os emuladores e Node.js 22 para as Functions.
+1. Instale Flutter e Android SDK. Use Java 21 para a compilação Android e os emuladores e Node.js 22 para as Functions.
 2. Instale e autentique as ferramentas:
 
        npm install -g firebase-tools
