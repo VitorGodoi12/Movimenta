@@ -1,3 +1,4 @@
+import 'package:stokio/widgets/painel_acesso.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -123,116 +124,119 @@ class _AutenticacaoState extends State<_Autenticacao> {
       RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(valor);
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(_criar ? 'Criar conta' : 'Entrar no Movimenta')),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 460),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _form,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'E-mail'),
-                  validator: (v) => _emailValido(v?.trim() ?? '')
-                      ? null
-                      : 'Informe um e-mail válido.',
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _senha,
-                  obscureText: !_visivel,
-                  decoration: InputDecoration(
-                    labelText: 'Senha',
-                    suffixIcon: IconButton(
-                      tooltip: _visivel ? 'Ocultar senha' : 'Mostrar senha',
-                      onPressed: () => setState(() => _visivel = !_visivel),
-                      icon: Icon(
-                        _visivel ? Icons.visibility_off : Icons.visibility,
-                      ),
-                    ),
-                  ),
-                  validator: (v) => (v?.length ?? 0) >= 6
-                      ? null
-                      : 'Use pelo menos 6 caracteres.',
-                ),
-                if (_ocupado) const LinearProgressIndicator(),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: _ocupado
-                      ? null
-                      : () {
-                          if (!_form.currentState!.validate()) return;
-                          _executar(() async {
-                            if (_criar) {
-                              final credencial = await MercadoFirebase.auth
-                                  .createUserWithEmailAndPassword(
-                                    email: _email.text.trim(),
-                                    password: _senha.text,
-                                  );
-                              await credencial.user?.sendEmailVerification();
-                            } else {
-                              await MercadoFirebase.auth
-                                  .signInWithEmailAndPassword(
-                                    email: _email.text.trim(),
-                                    password: _senha.text,
-                                  );
-                            }
-                          });
-                        },
-                  child: Text(_criar ? 'Continuar cadastro' : 'Entrar'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: _ocupado
-                      ? null
-                      : () => _executar(MercadoFirebase.entrarGoogle),
-                  child: const Text('Entrar com o Google'),
-                ),
-                TextButton(
-                  onPressed: _ocupado
-                      ? null
-                      : () {
-                          final email = _email.text.trim();
-                          if (!_emailValido(email)) {
-                            _mensagem(
-                              context,
-                              'Preencha o e-mail para recuperar a senha.',
-                            );
-                            return;
-                          }
-                          _executar(() async {
-                            try {
-                              await MercadoFirebase.auth.sendPasswordResetEmail(
-                                email: email,
-                              );
-                            } on FirebaseAuthException catch (erro) {
-                              if (erro.code != 'user-not-found') rethrow;
-                            }
-                            if (mounted)
-                              _mensagem(
-                                context,
-                                'Se houver uma conta para este e-mail, você receberá o link.',
-                              );
-                          });
-                        },
-                  child: const Text('Esqueci minha senha'),
-                ),
-                TextButton(
-                  onPressed: _ocupado
-                      ? null
-                      : () => setState(() => _criar = !_criar),
-                  child: Text(_criar ? 'Já tenho conta' : 'Criar conta'),
-                ),
-              ],
+  Widget build(BuildContext context) => PainelAcesso(
+    titulo: _criar ? 'Crie sua conta' : 'Bem-vindo de volta',
+    descricao: _criar
+        ? 'Use seu e-mail ou Google para começar.'
+        : 'Entre para acessar o seu mercado.',
+    child: AutofillGroup(
+      child: Form(
+        key: _form,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              decoration: const InputDecoration(
+                labelText: 'E-mail',
+                prefixIcon: Icon(Icons.mail_outline),
+              ),
+              validator: (v) => _emailValido(v?.trim() ?? '')
+                  ? null
+                  : 'Informe um e-mail válido.',
             ),
-          ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _senha,
+              obscureText: !_visivel,
+              autofillHints: [
+                _criar ? AutofillHints.newPassword : AutofillHints.password,
+              ],
+              decoration: InputDecoration(
+                labelText: 'Senha',
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  tooltip: _visivel ? 'Ocultar senha' : 'Mostrar senha',
+                  onPressed: () => setState(() => _visivel = !_visivel),
+                  icon: Icon(
+                    _visivel ? Icons.visibility_off : Icons.visibility,
+                  ),
+                ),
+              ),
+              validator: (v) =>
+                  (v?.length ?? 0) >= 6 ? null : 'Use pelo menos 6 caracteres.',
+            ),
+            if (_ocupado) const LinearProgressIndicator(),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: _ocupado
+                  ? null
+                  : () {
+                      if (!_form.currentState!.validate()) return;
+                      _executar(() async {
+                        if (_criar) {
+                          final credencial = await MercadoFirebase.auth
+                              .createUserWithEmailAndPassword(
+                                email: _email.text.trim(),
+                                password: _senha.text,
+                              );
+                          await credencial.user?.sendEmailVerification();
+                        } else {
+                          await MercadoFirebase.auth.signInWithEmailAndPassword(
+                            email: _email.text.trim(),
+                            password: _senha.text,
+                          );
+                        }
+                      });
+                    },
+              child: Text(_criar ? 'Continuar cadastro' : 'Entrar'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _ocupado
+                  ? null
+                  : () => _executar(MercadoFirebase.entrarGoogle),
+              child: const Text('Entrar com o Google'),
+            ),
+            TextButton(
+              onPressed: _ocupado
+                  ? null
+                  : () {
+                      final email = _email.text.trim();
+                      if (!_emailValido(email)) {
+                        _mensagem(
+                          context,
+                          'Preencha o e-mail para recuperar a senha.',
+                        );
+                        return;
+                      }
+                      _executar(() async {
+                        try {
+                          await MercadoFirebase.auth.sendPasswordResetEmail(
+                            email: email,
+                          );
+                        } on FirebaseAuthException catch (erro) {
+                          if (erro.code != 'user-not-found') rethrow;
+                        }
+                        if (mounted)
+                          _mensagem(
+                            context,
+                            'Se houver uma conta para este e-mail, você receberá o link.',
+                          );
+                      });
+                    },
+              child: const Text('Esqueci minha senha'),
+            ),
+            TextButton(
+              onPressed: _ocupado
+                  ? null
+                  : () => setState(() => _criar = !_criar),
+              child: Text(_criar ? 'Já tenho conta' : 'Criar conta'),
+            ),
+          ],
         ),
       ),
     ),
